@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <iomanip>
 
 #include "Config.hpp"
 #include "Distribution.hpp"
