@@ -6,6 +6,7 @@
 #include <cstring>
 #include <charconv>
 
+#include "Config.hpp"
 #include "Simulation.hpp"
 
 using namespace std::chrono_literals;

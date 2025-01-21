@@ -1,3 +1,5 @@
+#include <stdexcept>
+
 #include "Config.hpp"
 #include "Transaction.hpp"
 #include "Distribution.hpp"
@@ -17,6 +19,8 @@ int GenerateTransactionDelay(Transaction transaction)
 		case Transaction::Transaction3:
 			return ExponentialDistribution(TRANSACTION3_AVG_DELAY);
 	}
+
+	throw std::runtime_error("unknown transaction type");
 }
 
 std::ostream& operator<<(std::ostream& stream, Transaction transaction)

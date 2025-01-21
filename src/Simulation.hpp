@@ -2,8 +2,8 @@
 
 #include <vector>
 #include <iostream>
+#include <cstdint>
 
-#include "Config.hpp"
 #include "Operator.hpp"
 #include "Transaction.hpp"
 
