@@ -19,7 +19,7 @@ constexpr int DEFAULT_SIMULATION_DURATION   = 1000;
 constexpr int DEFAULT_AVG_TRANSACTION_QUEUE = 3;
 constexpr int DEFAULT_MAX_QUEUE_SIZE        = 7;
 constexpr int DEFAULT_DELAY_MS              = 100;
-constexpr int DEFAULT_OP1_COUNT             = 3;
-constexpr int DEFAULT_OP2_COUNT             = 3;
+constexpr int DEFAULT_OP1_COUNT             = 5;
+constexpr int DEFAULT_OP2_COUNT             = 5;
 
 //======================================

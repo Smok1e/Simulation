@@ -31,6 +31,6 @@ int ExponentialDistribution(int expectation)
 	return -static_cast<double>(expectation) / log(1.0 - y);
 }
 
-#endif // DISTRIBUTION_USE_STL
+#endif // SIMULATION_DISTRIBUTION_USE_STL
 
 //======================================

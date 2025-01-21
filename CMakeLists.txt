@@ -18,6 +18,12 @@ add_executable(
 	src/Main.cpp
 )
 
+add_executable(
+	Test
+	src/Distribution.cpp
+	src/Test.cpp
+)
+
 option(
 	STL_DISTRIBUTION 
 	"Use C++ <random> api instead of C rand() function"
@@ -25,9 +31,5 @@ option(
 )
 
 if (STL_DISTRIBUTION)
-	target_compile_definitions(
-		Simulation 
-		PRIVATE 
-		SIMULATION_DISTRIBUTION_USE_STL
-	)
+	add_compile_definitions(SIMULATION_DISTRIBUTION_USE_STL)
 endif ()
