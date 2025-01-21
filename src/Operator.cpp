@@ -6,6 +6,9 @@
 
 //======================================
 
+Operator::~Operator()
+{}
+
 bool Operator::isFree() const
 {
 	return !m_remaining_processing_time;
