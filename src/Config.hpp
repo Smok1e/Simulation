@@ -1,7 +1,5 @@
 #pragma once
 
-#include <chrono>
-
 //======================================
 
 constexpr int R1 =  8, G1 =  6, B1 =  6;
@@ -17,11 +15,11 @@ constexpr auto TRANSACTION2_AVG_PROCESSING_TIME     = R2 + G2 + B2;
 constexpr auto TRANSACTION3_AVG_PROCESSING_TIME_OP1 = R3 + G3 + B3 + G1;
 constexpr auto TRANSACTION3_AVG_PROCESSING_TIME_OP2 = R3 + G3 + B3 + B1;
 											     
-constexpr int DEFAULT_SIMULATION_DURATION       = 1000;
-constexpr int DEFAULT_AVG_TRANSACTION_QUEUE     = 3;
-constexpr int DEFAULT_MAX_QUEUE_SIZE            = 7;
-constexpr int DEFAULT_DELAY_MS = 100;
-constexpr int DEFAULT_OP1_COUNT                 = 3;
-constexpr int DEFAULT_OP2_COUNT                 = 3;
+constexpr int DEFAULT_SIMULATION_DURATION   = 1000;
+constexpr int DEFAULT_AVG_TRANSACTION_QUEUE = 3;
+constexpr int DEFAULT_MAX_QUEUE_SIZE        = 7;
+constexpr int DEFAULT_DELAY_MS              = 100;
+constexpr int DEFAULT_OP1_COUNT             = 3;
+constexpr int DEFAULT_OP2_COUNT             = 3;
 
 //======================================

@@ -25,6 +25,8 @@ T GetNumericOption(
 
 int main(int argc, char* argv[])
 {
+	srand(time(0));
+
 	auto options = ParseArguments(argc, argv);
 
 	// Display help and exit
@@ -128,13 +130,13 @@ int main(int argc, char* argv[])
 
 	// Interactive mode
 	else
-	{
+	{                           
 		Simulation simulation(op1_count, op2_count);
 		for (size_t time = 0; time < simulation_duration; time++)
 		{
-			std::cout << ansi_clear;
-
 			simulation.onTimeTick();
+
+			std::cout << ansi_clear;
 			simulation.displayStatistics();
 
 			std::this_thread::sleep_for(delay);

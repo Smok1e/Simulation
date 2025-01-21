@@ -3,6 +3,7 @@
 //======================================
 
 #ifdef DISTRIBUTION_USE_STL
+
 #include <random>
 
 int ExponentialDistribution(int expectation)
@@ -18,6 +19,7 @@ int ExponentialDistribution(int expectation)
 }
 
 #else
+
 #include <cmath>
 
 int ExponentialDistribution(int expectation)
