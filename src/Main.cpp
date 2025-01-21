@@ -46,6 +46,7 @@ int main(int argc, char* argv[])
 			<< "                           for optimize mode                      " << std::endl
 			<< "  --op1=<number>         - Set starting number of type 1 operators" << std::endl
 			<< "  --op2=<number>         - Set starting number of type 2 operators" << std::endl
+			<< "  --shuffle              - Shuffle operators                      " << std::endl
 			<< "                                                                  " << std::endl
 			<< "Available modes:                                                  " << std::endl
 			<< "  interactive (default)  - Display simulation statistics in       " << std::endl
@@ -61,6 +62,8 @@ int main(int argc, char* argv[])
 	auto simulation_duration = GetNumericOption(options, "time", DEFAULT_SIMULATION_DURATION);
 	auto op1_count           = GetNumericOption(options, "op1",  DEFAULT_OP1_COUNT          );
 	auto op2_count           = GetNumericOption(options, "op2",  DEFAULT_OP2_COUNT          );
+	
+	bool shuffle = options.contains("shuffle");
 
 	auto delay = std::chrono::milliseconds(
 		GetNumericOption(options, "delay", DEFAULT_DELAY_MS)
@@ -87,7 +90,7 @@ int main(int argc, char* argv[])
 		bool running = true;
 		while (running)
 		{
-			Simulation simulation(op1_count, op2_count);
+			Simulation simulation(op1_count, op2_count, shuffle);
 			for (size_t time = 0; time < simulation_duration; time++)
 				simulation.onTimeTick();
 
@@ -132,7 +135,7 @@ int main(int argc, char* argv[])
 	// Interactive mode
 	else
 	{                           
-		Simulation simulation(op1_count, op2_count);
+		Simulation simulation(op1_count, op2_count, shuffle);
 		for (size_t time = 0; time < simulation_duration; time++)
 		{
 			simulation.onTimeTick();

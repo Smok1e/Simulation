@@ -18,9 +18,10 @@ int GenerateTransactionDelay(Transaction transaction)
 
 		case Transaction::Transaction3:
 			return ExponentialDistribution(TRANSACTION3_AVG_DELAY);
-	}
 
-	throw std::runtime_error("unknown transaction type");
+		default:
+			throw std::runtime_error("unknown transaction type");
+	}
 }
 
 std::ostream& operator<<(std::ostream& stream, Transaction transaction)
@@ -28,7 +29,7 @@ std::ostream& operator<<(std::ostream& stream, Transaction transaction)
 	if (transaction == Transaction::None)
 		return stream << "[none]";
 
-	return stream << '[' << static_cast<int>(transaction) + 1 << ']';
+	return stream << static_cast<int>(transaction) + 1;
 }
 
 //======================================

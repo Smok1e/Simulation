@@ -12,7 +12,7 @@
 class Simulation
 {
 public:
-	Simulation(size_t op1_count, size_t op2_count);
+	Simulation(size_t op1_count, size_t op2_count, bool shuffle = false);
 	~Simulation();
 
 	void onTimeTick();

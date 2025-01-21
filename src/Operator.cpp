@@ -1,4 +1,3 @@
-#include <stdexcept>
 #include <iomanip>
 
 #include "Config.hpp"
@@ -38,19 +37,24 @@ void Operator::onTimeTick()
 
 std::ostream& operator<<(std::ostream& stream, const Operator& op)
 {
-	stream << op.getName();
+	stream << op.getName() << ": ";
 
 	if (op.isFree())
-		stream << " [free]";
+		stream << "Free";
 
 	else
 	{
+        stream 
+			<< "Processing " << op.m_current_transaction << ' '
+			<< std::setw(3) << op.m_processing_time - op.m_remaining_processing_time << " / "
+			<< std::setw(3) << op.m_processing_time << "s ";
+
 		constexpr size_t max_width = 30;
 		size_t width = max_width * static_cast<double>(op.m_remaining_processing_time) / op.m_processing_time;
 
 		stream 
-			<< " [" 
-			<< std::setfill('#') << std::setw(max_width - width) << "" 
+			<< '['
+			<< std::setfill('=') << std::setw(max_width - width) << ">"
 			<< std::setfill(' ') << std::setw(            width) << ""
 			<< ']';
 	}

@@ -1,12 +1,13 @@
 #include <algorithm>
 #include <iomanip>
 #include <cmath>
+#include <random>
 
 #include "Simulation.hpp"
 
 //======================================
 
-Simulation::Simulation(size_t op1_count, size_t op2_count):
+Simulation::Simulation(size_t op1_count, size_t op2_count, bool shuffle /*= false*/):
 	m_op1_count(op1_count),
 	m_op2_count(op2_count)
 {
@@ -15,6 +16,13 @@ Simulation::Simulation(size_t op1_count, size_t op2_count):
 
 	for (size_t i = 0; i < op2_count; i++)
 		m_operators.push_back(new Operator2);
+
+	if (shuffle)
+	{
+		std::random_device device;
+		std::mt19937 generator(device());
+		std::shuffle(m_operators.begin(), m_operators.end(), generator);
+	}
 }
 
 Simulation::~Simulation()
@@ -119,7 +127,7 @@ void Simulation::displayStatistics(
 	{
 		stream << "Transactions:" << std::endl;
 		for (int i = 0; i < static_cast<int>(Transaction::Amount); i++)
-			stream << "Type " << i << " pending in " << m_pending_transactions[i] << std::endl;
+			stream << "Type " << static_cast<Transaction>(i) << " pending in " << m_pending_transactions[i] << std::endl;
 
 		stream << std::endl;
 	}
