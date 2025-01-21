@@ -25,5 +25,9 @@ option(
 )
 
 if (STL_DISTRIBUTION)
-	add_compile_definitions(DISTRIBUTION_USE_STL)
+	target_compile_definitions(
+		Simulation 
+		PRIVATE 
+		SIMULATION_DISTRIBUTION_USE_STL
+	)
 endif ()

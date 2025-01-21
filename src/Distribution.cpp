@@ -2,7 +2,7 @@
 
 //======================================
 
-#ifdef DISTRIBUTION_USE_STL
+#ifdef SIMULATION_DISTRIBUTION_USE_STL
 
 #include <random>
 

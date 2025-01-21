@@ -22,6 +22,7 @@ protected:
 	virtual const char* getName() const = 0;
 
 	Transaction m_current_transaction = Transaction::None;
+	int m_processing_time = 0;
 	int m_remaining_processing_time = 0;
 
 	// Returns -1 if unable to process this type of transaction

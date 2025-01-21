@@ -25,7 +25,7 @@ bool Operator::processTransaction(Transaction transaction)
 		return false;
 
 	m_current_transaction = transaction;
-	m_remaining_processing_time = processing_time;
+	m_remaining_processing_time = m_processing_time = processing_time;
 
 	return true;
 }
@@ -41,14 +41,19 @@ std::ostream& operator<<(std::ostream& stream, const Operator& op)
 	stream << op.getName();
 
 	if (op.isFree())
-		stream << " (free)";
+		stream << " [free]";
 
 	else
+	{
+		constexpr size_t max_width = 30;
+		size_t width = max_width * static_cast<double>(op.m_remaining_processing_time) / op.m_processing_time;
+
 		stream 
-		<< " (processing " 
-		<< op.m_current_transaction << " for ahother " 
-		<< std::setw(2) << op.m_remaining_processing_time 
-		<< "s)";
+			<< " [" 
+			<< std::setfill('#') << std::setw(max_width - width) << "" 
+			<< std::setfill(' ') << std::setw(            width) << ""
+			<< ']';
+	}
 
 	return stream;
 }
