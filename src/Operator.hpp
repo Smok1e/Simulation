@@ -10,6 +10,7 @@ class Operator
 {
 public:
 	Operator() = default;
+	virtual ~Operator();
 
 	bool isFree() const;
 	bool processTransaction(Transaction transaction);
