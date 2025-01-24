@@ -8,6 +8,7 @@
 
 #include "Config.hpp"
 #include "Simulation.hpp"
+#include "EscapeSequence.hpp"
 
 using namespace std::chrono_literals;
 
@@ -26,8 +27,6 @@ T GetNumericOption(
 
 int main(int argc, char* argv[])
 {
-	srand(time(0));
-
 	auto options = ParseArguments(argc, argv);
 
 	// Display help and exit
@@ -58,6 +57,9 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
+	std::cout << TermColor::Push(TermColor::ForegroundDefault);
+	srand(time(0));
+
 	// Common options
 	auto simulation_duration = GetNumericOption(options, "time", DEFAULT_SIMULATION_DURATION);
 	auto op1_count           = GetNumericOption(options, "op1",  DEFAULT_OP1_COUNT          );
@@ -68,9 +70,6 @@ int main(int argc, char* argv[])
 	auto delay = std::chrono::milliseconds(
 		GetNumericOption(options, "delay", DEFAULT_DELAY_MS)
 	);
-
-	// ANSI escape sequence to clear terminal and move cursor to the top left corner
-	const char* ansi_clear = "\x1B[2J\x1B[1;1H";
 
 	// Optimization mode
 	if (options["mode"] == "optimize")
@@ -94,7 +93,7 @@ int main(int argc, char* argv[])
 			for (size_t time = 0; time < simulation_duration; time++)
 				simulation.onTimeTick();
 
-			std::cout << ansi_clear;
+			std::cout << TermClear() << TermCursorPos(0, 0);
 			simulation.displayStatistics(
 				std::cout, 
 				Simulation::Default 
@@ -140,7 +139,7 @@ int main(int argc, char* argv[])
 		{
 			simulation.onTimeTick();
 
-			std::cout << ansi_clear;
+			std::cout << TermClear() << TermCursorPos(0, 0);
 			simulation.displayStatistics();
 
 			std::this_thread::sleep_for(delay);

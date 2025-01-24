@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "Transaction.hpp"
+#include "EscapeSequence.hpp"
 
 //======================================
 
@@ -20,6 +21,7 @@ public:
 
 protected:
 	virtual const char* getName() const = 0;
+	virtual TermColor::Color getColor() const = 0;
 
 	Transaction m_current_transaction = Transaction::None;
 	int m_processing_time = 0;
@@ -38,6 +40,7 @@ public:
 	using Operator::Operator;
 
 	const char* getName() const override;
+	TermColor::Color getColor() const override;
 	int generateTransactionProcessingTime(Transaction transaction) const override;
 
 };
@@ -48,6 +51,7 @@ public:
 	using Operator::Operator;
 
 	const char* getName() const override;
+	TermColor::Color getColor() const override;
 	int generateTransactionProcessingTime(Transaction transaction) const override;
 
 };

@@ -3,6 +3,7 @@
 #include "Config.hpp"
 #include "Distribution.hpp"
 #include "Operator.hpp"
+#include "EscapeSequence.hpp"
 
 //======================================
 
@@ -37,17 +38,19 @@ void Operator::onTimeTick()
 
 std::ostream& operator<<(std::ostream& stream, const Operator& op)
 {
-	stream << op.getName() << ": ";
+	stream << TermColor::Push(op.getColor()) << op.getName() << ": " << TermColor::Pop();
 
 	if (op.isFree())
-		stream << "Free";
+		stream << TermColor::ForegroundGreen << "Free" << TermColor::ForegroundDefault;
 
 	else
 	{
         stream 
+			<< TermColor::Push(TermColor::ForegroundBlue)
 			<< "Processing " << op.m_current_transaction << ' '
 			<< std::setw(3) << op.m_processing_time - op.m_remaining_processing_time << " / "
-			<< std::setw(3) << op.m_processing_time << "s ";
+			<< std::setw(3) << op.m_processing_time << "s "
+			<< TermColor::Pop();
 
 		constexpr size_t max_width = 30;
 		size_t width = max_width * static_cast<double>(op.m_remaining_processing_time) / op.m_processing_time;
@@ -67,6 +70,11 @@ std::ostream& operator<<(std::ostream& stream, const Operator& op)
 const char* Operator1::getName() const
 {
 	return "Operator1";
+}
+
+TermColor::Color Operator1::getColor() const
+{
+	return TermColor::ForegroundCyan;
 }
 
 int Operator1::generateTransactionProcessingTime(Transaction transaction) const
@@ -89,6 +97,11 @@ int Operator1::generateTransactionProcessingTime(Transaction transaction) const
 const char* Operator2::getName() const
 {
 	return "Operator2";
+}
+
+TermColor::Color Operator2::getColor() const
+{
+	return TermColor::ForegroundRed;
 }
 
 int Operator2::generateTransactionProcessingTime(Transaction transaction) const

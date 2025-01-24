@@ -16,13 +16,13 @@ add_executable(
 	src/Operator.cpp
 	src/Simulation.cpp
 	src/Main.cpp
-)
+ "src/EscapeSequence.cpp")
 
 add_executable(
 	Test
 	src/Distribution.cpp
 	src/Test.cpp
-)
+ "src/EscapeSequence.cpp")
 
 option(
 	STL_DISTRIBUTION 

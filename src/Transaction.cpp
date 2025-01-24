@@ -3,6 +3,7 @@
 #include "Config.hpp"
 #include "Transaction.hpp"
 #include "Distribution.hpp"
+#include "EscapeSequence.hpp"
 
 //======================================
 
@@ -24,12 +25,33 @@ int GenerateTransactionDelay(Transaction transaction)
 	}
 }
 
+TermColor::Color TransactionColor(Transaction transaction)
+{
+	switch (transaction)
+	{
+		case Transaction::Transaction1:
+			return TermColor::ForegroundCyan;
+
+		case Transaction::Transaction2:
+			return TermColor::ForegroundRed;
+
+		case Transaction::Transaction3:
+			return TermColor::ForegroundMagenta;
+
+		default:
+			return TermColor::ForegroundDefault;
+	}
+}
+
 std::ostream& operator<<(std::ostream& stream, Transaction transaction)
 {
 	if (transaction == Transaction::None)
 		return stream << "[none]";
 
-	return stream << static_cast<int>(transaction) + 1;
+	return stream 
+		<< TermColor::Push(TransactionColor(transaction)) 
+		<< static_cast<int>(transaction) + 1 
+		<< TermColor::Pop();
 }
 
 //======================================
