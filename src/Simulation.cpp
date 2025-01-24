@@ -7,9 +7,17 @@
 
 //======================================
 
-Simulation::Simulation(size_t op1_count, size_t op2_count, bool shuffle /*= false*/):
+Simulation::Simulation(
+	size_t op1_count, 
+	size_t op2_count, 
+	double max_avg_transaction_queued,
+	size_t max_queue_size,
+	bool   shuffle /*= false*/
+):
 	m_op1_count(op1_count),
-	m_op2_count(op2_count)
+	m_op2_count(op2_count),
+	m_target_avg_transaction_queued(max_avg_transaction_queued),
+	m_target_queue_size(max_queue_size)
 {
 	for (size_t i = 0; i < op1_count; i++)
 		m_operators.push_back(new Operator1);
@@ -107,17 +115,13 @@ void Simulation::displayStatistics(
 	// Queue
 	if (options & DisplayOptions::Queue)
 	{
-		stream << "Queue: ";	  
+		stream << "Queue (" << m_queue.size() << "): ";	  
 		if (m_queue.empty())
 			stream << "[empty]";
 
 		else
-		{
 			for (auto transaction: m_queue)
 				stream << transaction << ' ';
-
-			stream << "(" << m_queue.size() << " total)";
-		}
 
 		stream << std::endl << std::endl;
 	}
@@ -132,17 +136,16 @@ void Simulation::displayStatistics(
 		stream << std::endl;
 	}
 
+	int operator_number_max_length = std::floor(1 + std::log10(m_operators.size()));
+
 	// Operators
 	if (options & DisplayOptions::Operators)
 	{
 		stream << "Operators:" << std::endl;
 
 		if (options & DisplayOptions::OperatorsDetails)
-		{
-			int width = std::floor(1 + std::log10(m_operators.size()));
 			for (size_t i = 0; i < m_operators.size(); i++)
-				stream << "[" << std::setw(width) << i + 1 << "] - " << *m_operators[i] << std::endl;
-		}
+				m_operators[i]->displayDetails(stream << "[" << std::setw(operator_number_max_length) << i + 1 << "] - ") << std::endl;
 
 		else
 		{
@@ -156,14 +159,67 @@ void Simulation::displayStatistics(
 	// Statistics
 	if (options & DisplayOptions::Statistics)
 	{
+		// Average queued transactions
 		for (size_t i = 0; i < static_cast<int>(Transaction::Amount); i++)
+		{
+			auto avg = getAverageQueuedTransactions(static_cast<Transaction>(i));
+
 			stream 
 				<< "Average queued transactions of type " << static_cast<Transaction>(i) << ": " 
-				<< getAverageQueuedTransactions(static_cast<Transaction>(i))
+				<< TermColor::Push(
+					avg <= m_target_avg_transaction_queued
+						? TermColor::ForegroundGreen
+						: TermColor::ForegroundRed
+				)
+				<< std::fixed << std::setprecision(2) << avg
+				<< TermColor::Pop()
 				<< std::endl;
+		}
 
-		stream << "Maximum queue size: " << getMaxQueueSize() << std::endl;
+		stream << std::endl;
+
+		// Average operator load
+		for (size_t i = 0; i < m_operators.size(); i++)
+		{
+			stream
+				<< "[" << std::setw(operator_number_max_length) << i + 1 << "] " 
+				<< *m_operators[i] << " average load: " 
+				<< std::fixed << std::setprecision(2) << static_cast<double>(m_operators[i]->getLoadTicks()) / m_time
+				<< std::endl;
+		}
+		
+		stream << std::endl;
+
+		stream 
+			<< "Maximum queue size: " 
+			<< TermColor::Push(
+				m_max_queue_size <= m_target_queue_size
+					? TermColor::ForegroundGreen
+					: TermColor::ForegroundRed
+			) 
+			<< m_max_queue_size 
+			<< TermColor::Pop() 
+			<< std::endl;
 	}
+}
+
+//======================================
+
+bool Simulation::checkTargetRequirements() const
+{
+	if (m_max_queue_size > m_target_queue_size)
+		return false;
+
+	for (size_t i = 0; i < static_cast<int>(Transaction::Amount); i++)
+		if (getAverageQueuedTransactions(static_cast<Transaction>(i)) > m_target_avg_transaction_queued)
+			return false;
+
+	return true;
+}
+
+Simulation::operator bool() const
+{
+	return checkTargetRequirements();
 }
 
 //======================================

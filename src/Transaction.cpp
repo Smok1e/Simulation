@@ -36,7 +36,7 @@ TermColor::Color TransactionColor(Transaction transaction)
 			return TermColor::ForegroundRed;
 
 		case Transaction::Transaction3:
-			return TermColor::ForegroundMagenta;
+			return TermColor::ForegroundYellow;
 
 		default:
 			return TermColor::ForegroundDefault;

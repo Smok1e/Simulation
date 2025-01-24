@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
 	std::cout << TermColor::Push(TermColor::ForegroundDefault);
 	srand(time(0));
 
-	// Common options
+	// Resolving options
 	auto simulation_duration = GetNumericOption(options, "time", DEFAULT_SIMULATION_DURATION);
 	auto op1_count           = GetNumericOption(options, "op1",  DEFAULT_OP1_COUNT          );
 	auto op2_count           = GetNumericOption(options, "op2",  DEFAULT_OP2_COUNT          );
@@ -71,29 +71,38 @@ int main(int argc, char* argv[])
 		GetNumericOption(options, "delay", DEFAULT_DELAY_MS)
 	);
 
+	auto max_avg_transaction_queued = GetNumericOption(
+		options, 
+		"max-avg-tr", 
+		DEFAULT_AVG_TRANSACTION_QUEUE
+	);
+
+	auto max_queue_size = GetNumericOption(
+		options, 
+		"max-queue",  
+		DEFAULT_MAX_QUEUE_SIZE
+	);
+
 	// Optimization mode
 	if (options["mode"] == "optimize")
 	{
-		auto max_avg_transaction_queue = GetNumericOption(
-			options, 
-			"max-avg-tr", 
-			DEFAULT_AVG_TRANSACTION_QUEUE
-		);
-
-		auto max_queue = GetNumericOption(
-			options, 
-			"max-queue",  
-			DEFAULT_MAX_QUEUE_SIZE
-		);
-
-		bool running = true;
-		while (running)
+		for (size_t test = 1; true; test++)
 		{
-			Simulation simulation(op1_count, op2_count, shuffle);
+			Simulation simulation(
+				op1_count, 
+				op2_count, 
+				max_avg_transaction_queued, 
+				max_queue_size, 
+				shuffle
+			);
+
 			for (size_t time = 0; time < simulation_duration; time++)
 				simulation.onTimeTick();
 
-			std::cout << TermClear() << TermCursorPos(0, 0);
+			std::cout 
+				<< TermClear() << TermCursorPos(0, 0) 
+				<< "Test #" << test << ":" << std::endl;
+
 			simulation.displayStatistics(
 				std::cout, 
 				Simulation::Default 
@@ -102,30 +111,49 @@ int main(int argc, char* argv[])
 					& ~Simulation::PendingTransactions
 			);
 
-			running = false;
+			std::cout << std::endl;
 
-			auto avg_queue_1 = simulation.getAverageQueuedTransactions(Transaction::Transaction1);
-			auto avg_queue_2 = simulation.getAverageQueuedTransactions(Transaction::Transaction2);
+			auto op1_avg_load = simulation.getAverageOperatorLoad<Operator1>();
+			auto op2_avg_load = simulation.getAverageOperatorLoad<Operator2>();
 
-			if (avg_queue_1 > max_avg_transaction_queue)
-				op1_count += (running = true);
+			std::cout 
+				<< "Operator1 average load: " 
+				<< std::setprecision(2) << std::fixed << op1_avg_load << std::endl;
 
-			if (avg_queue_2 > max_avg_transaction_queue)
-				op2_count += (running = true);
+			std::cout 
+				<< "Operator2 average load: " 
+				<< std::setprecision(2) << std::fixed << op2_avg_load << std::endl;
 
-			if (simulation.getAverageQueuedTransactions(Transaction::Transaction3) > max_avg_transaction_queue && !running)
-				op1_count += (running = true);
+			std::cout << std::endl;
 
-			if (simulation.getMaxQueueSize() > max_queue && !running)
+			if (simulation)
 			{
-				if (avg_queue_1 > avg_queue_2)
-					op1_count++;
+				std::cout 
+					<< TermColor::Push(TermColor::ForegroundGreen)
+					<< "Test complete" 
+					<< TermColor::Pop()
+					<< std::endl;
 
-				else
-					op2_count++;
-
-				running = true;
+				break;
 			}
+
+			if (op1_avg_load > op2_avg_load)
+			{
+				std::cout << "Increasing operators of type 1 number" << std::endl;
+				op1_count++;
+			}
+
+			else
+			{
+				std::cout << "Increasing operators of type 2 number" << std::endl;
+				op2_count++;
+			}
+
+			std::cout 
+				<< TermColor::Push(TermColor::ForegroundYellow)
+				<< "Restarting test" 
+				<< TermColor::Pop()
+				<< std::endl;
 
 			std::this_thread::sleep_for(delay);
 		}
@@ -134,7 +162,14 @@ int main(int argc, char* argv[])
 	// Interactive mode
 	else
 	{                           
-		Simulation simulation(op1_count, op2_count, shuffle);
+		Simulation simulation(
+			op1_count, 
+			op2_count, 
+			max_avg_transaction_queued, 
+			max_queue_size, 
+			shuffle
+		);
+
 		for (size_t time = 0; time < simulation_duration; time++)
 		{
 			simulation.onTimeTick();

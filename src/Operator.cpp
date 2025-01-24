@@ -34,26 +34,39 @@ void Operator::onTimeTick()
 {
 	if (!(m_remaining_processing_time -= !!m_remaining_processing_time))
 		m_current_transaction = Transaction::None;
+
+	else
+		m_load_ticks++;
+}
+
+unsigned Operator::getLoadTicks() const
+{
+	return m_load_ticks;
 }
 
 std::ostream& operator<<(std::ostream& stream, const Operator& op)
 {
-	stream << TermColor::Push(op.getColor()) << op.getName() << ": " << TermColor::Pop();
+	return stream << TermColor::Push(op.getColor()) << op.getName() << TermColor::Pop();
+}
 
-	if (op.isFree())
+std::ostream& Operator::displayDetails(std::ostream& stream) const
+{
+	stream << *this << ": ";
+
+	if (isFree())
 		stream << TermColor::ForegroundGreen << "Free" << TermColor::ForegroundDefault;
 
 	else
 	{
         stream 
 			<< TermColor::Push(TermColor::ForegroundBlue)
-			<< "Processing " << op.m_current_transaction << ' '
-			<< std::setw(3) << op.m_processing_time - op.m_remaining_processing_time << " / "
-			<< std::setw(3) << op.m_processing_time << "s "
+			<< "Processing " << m_current_transaction << ' '
+			<< std::setw(3) << m_processing_time - m_remaining_processing_time << " / "
+			<< std::setw(3) << m_processing_time << "s "
 			<< TermColor::Pop();
 
 		constexpr size_t max_width = 30;
-		size_t width = max_width * static_cast<double>(op.m_remaining_processing_time) / op.m_processing_time;
+		size_t width = max_width * static_cast<double>(m_remaining_processing_time) / m_processing_time;
 
 		stream 
 			<< '['
@@ -62,7 +75,7 @@ std::ostream& operator<<(std::ostream& stream, const Operator& op)
 			<< ']';
 	}
 
-	return stream;
+	return stream;	
 }
 
 //======================================
