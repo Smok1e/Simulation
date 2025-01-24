@@ -11,18 +11,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(
 	Simulation
-	src/Distribution.cpp
-	src/Transaction.cpp
-	src/Operator.cpp
-	src/Simulation.cpp
-	src/Main.cpp
- "src/EscapeSequence.cpp")
-
-add_executable(
-	Test
-	src/Distribution.cpp
-	src/Test.cpp
- "src/EscapeSequence.cpp")
+	"src/Distribution.cpp"
+	"src/Transaction.cpp"
+	"src/Operator.cpp"
+	"src/Simulation.cpp"
+	"src/Main.cpp"
+	"src/EscapeSequence.cpp"
+)
 
 option(
 	STL_DISTRIBUTION 
