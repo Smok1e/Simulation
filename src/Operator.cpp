@@ -59,6 +59,7 @@ std::ostream& Operator::displayDetails(std::ostream& stream) const
 	else
 	{
         stream 
+			<< std::right
 			<< TermColor::Push(TermColor::ForegroundBlue)
 			<< "Processing " << m_current_transaction << ' '
 			<< std::setw(3) << m_processing_time - m_remaining_processing_time << " / "
