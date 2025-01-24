@@ -182,8 +182,8 @@ void Simulation::displayStatistics(
 		for (size_t i = 0; i < m_operators.size(); i++)
 		{
 			stream
-				<< "[" << std::setw(operator_number_max_length) << i + 1 << "] " 
-				<< *m_operators[i] << " average load: " 
+				<< "Operator #" << std::setw(operator_number_max_length) << std::left << i + 1 
+				<< " (" << *m_operators[i] << ") average load: " 
 				<< std::fixed << std::setprecision(2) << static_cast<double>(m_operators[i]->getLoadTicks()) / m_time
 				<< std::endl;
 		}
