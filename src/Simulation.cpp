@@ -144,8 +144,12 @@ void Simulation::displayStatistics(
 		stream << "Operators:" << std::endl;
 
 		if (options & DisplayOptions::OperatorsDetails)
+		{
 			for (size_t i = 0; i < m_operators.size(); i++)
-				m_operators[i]->displayDetails(stream << "[" << std::setw(operator_number_max_length) << i + 1 << "] - ") << std::endl;
+				m_operators[i]->displayDetails(
+					stream << "[" << std::right << std::setw(operator_number_max_length) << i + 1 << "] - "
+				) << std::endl;
+		}
 
 		else
 		{
@@ -172,6 +176,7 @@ void Simulation::displayStatistics(
 						: TermColor::ForegroundRed
 				)
 				<< std::fixed << std::setprecision(2) << avg
+				<< " / " << m_target_avg_transaction_queued
 				<< TermColor::Pop()
 				<< std::endl;
 		}
@@ -198,6 +203,7 @@ void Simulation::displayStatistics(
 					: TermColor::ForegroundRed
 			) 
 			<< m_max_queue_size 
+			<< " / " << m_target_queue_size
 			<< TermColor::Pop() 
 			<< std::endl;
 	}

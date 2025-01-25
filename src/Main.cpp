@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 	{
 		std::cout 
 			<< "Usage: " << argv[0] << " [OPTIONS]" << std::endl
-			<< "Available options:" << std::endl
+			<< "Available options:                                                " << std::endl
 			<< "  --help                 - Print usage information and exit       " << std::endl
 			<< "  --mode=<mode>          - Set simulation mode (see below)        " << std::endl
 			<< "  --time=<time>          - Set simulation duration                " << std::endl
