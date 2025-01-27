@@ -17,6 +17,7 @@ add_executable(
 	"src/Simulation.cpp"
 	"src/Main.cpp"
 	"src/EscapeSequence.cpp"
+	"src/ArgParser.cpp"
 )
 
 option(
@@ -28,3 +29,9 @@ option(
 if (STL_DISTRIBUTION)
 	add_compile_definitions(SIMULATION_DISTRIBUTION_USE_STL)
 endif ()
+
+string(TIMESTAMP CURRENT_TIME "%d.%m.%Y %H:%M:%S")
+
+add_compile_definitions(
+	SIMULATION_VERSION_INFO="${CMAKE_PROJECT_NAME} version ${CMAKE_PROJECT_VERSION} built with STL_DISTRIBUTION=${STL_DISTRIBUTION} at ${CURRENT_TIME}"
+)

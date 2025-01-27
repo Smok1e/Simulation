@@ -4,87 +4,67 @@
 #include <map>
 #include <string_view>
 #include <cstring>
-#include <charconv>
 
+#include "Distribution.hpp"
 #include "Config.hpp"
 #include "Simulation.hpp"
 #include "EscapeSequence.hpp"
+#include "ArgParser.hpp"
 
 using namespace std::chrono_literals;
 
 //======================================
 
-std::map<std::string_view, std::string_view> ParseArguments(int argc, char* argv[]);
-
-template<typename T>
-T GetNumericOption(
-	std::map<std::string_view, std::string_view>& options, 
-	const char* name, 
-	T default_value
-);
-
-//======================================
-
 int main(int argc, char* argv[])
 {
-	auto options = ParseArguments(argc, argv);
+	ArgParser parser {
+		{"help",            "Print usage reference and exit"                       },
+		{"version",         "Print build information and exit"                     },
+		{"seed",            "Set random seed"                                      },
+		{"mode",            "Set simulation mode"                                  },
+		{"time",            "Set simulation duration"                              },
+		{"delay",           "Set delay in milliseconds"                            },
+		{"max-avg-tr", 'X', "Set target average transactions limit (optimize mode)"},
+		{"max-queue",  'Y', "Set target queue size limit (optimize mode)"          },
+		{"op1",        '1', "Set number of operators of type 1"                    },
+		{"op2",        '2', "Set number of operators of type 2"                    },
+		{"shuffle",    'S', "Enable operator shuffling"                            }
+	};
+
+	parser.parse(argc, argv);
 
 	// Display help and exit
-	if (options.contains("help"))
+	if (parser["help"])
 	{
-		std::cout 
-			<< "Usage: " << argv[0] << " [OPTIONS]" << std::endl
-			<< "Available options:                                                " << std::endl
-			<< "  --help                 - Print usage information and exit       " << std::endl
-			<< "  --mode=<mode>          - Set simulation mode (see below)        " << std::endl
-			<< "  --time=<time>          - Set simulation duration                " << std::endl
-			<< "  --delay=<milliseconds> - Set delay in                           " << std::endl
-			<< "  --max-avg-tr=<X>       - Set maximum average transactions of    " << std::endl
-			<< "                           every type in queue for optimize mode  " << std::endl
-			<< "  --max-queue=<Y>        - Set maximum transaction queue size     " << std::endl
-			<< "                           for optimize mode                      " << std::endl
-			<< "  --op1=<number>         - Set starting number of type 1 operators" << std::endl
-			<< "  --op2=<number>         - Set starting number of type 2 operators" << std::endl
-			<< "  --shuffle              - Shuffle operators                      " << std::endl
-			<< "                                                                  " << std::endl
-			<< "Available modes:                                                  " << std::endl
-			<< "  interactive (default)  - Display simulation statistics in       " << std::endl
-			<< "                           real time during the simulation        " << std::endl
-			<< "  optimize               - Test incrementing operator amounts     " << std::endl
-			<< "                           amounts until statistics meets         " << std::endl
-			<< "                           specific requirements                  " << std::endl;
+		std::cout << parser << std::endl;
+		return 0;
+	}
 
+	// Display version and exit
+	if (parser["version"])
+	{
+		std::cout << SIMULATION_VERSION_INFO << std::endl;
 		return 0;
 	}
 
 	std::cout << TermColor::Push(TermColor::ForegroundDefault);
-	srand(time(0));
+
+	if (parser["seed"])
+		RandomSeed = parser["seed"];
 
 	// Resolving options
-	auto simulation_duration = GetNumericOption(options, "time", DEFAULT_SIMULATION_DURATION);
-	auto op1_count           = GetNumericOption(options, "op1",  DEFAULT_OP1_COUNT          );
-	auto op2_count           = GetNumericOption(options, "op2",  DEFAULT_OP2_COUNT          );
+	auto simulation_duration = parser.get("time", DEFAULT_SIMULATION_DURATION);
+	auto op1_count           = parser.get("op1",  DEFAULT_OP1_COUNT          );
+	auto op2_count           = parser.get("op2",  DEFAULT_OP2_COUNT          );
 	
-	bool shuffle = options.contains("shuffle");
+	bool shuffle = parser["shuffle"];
+	auto delay = std::chrono::milliseconds(parser.get("delay", DEFAULT_DELAY_MS));
 
-	auto delay = std::chrono::milliseconds(
-		GetNumericOption(options, "delay", DEFAULT_DELAY_MS)
-	);
-
-	auto max_avg_transaction_queued = GetNumericOption(
-		options, 
-		"max-avg-tr", 
-		DEFAULT_AVG_TRANSACTION_QUEUE
-	);
-
-	auto max_queue_size = GetNumericOption(
-		options, 
-		"max-queue",  
-		DEFAULT_MAX_QUEUE_SIZE
-	);
+	auto max_avg_transaction_queued = parser.get("max-avg-tr", DEFAULT_AVG_TRANSACTION_QUEUE);
+	auto max_queue_size             = parser.get("max-queue", DEFAULT_MAX_QUEUE_SIZE        );
 
 	// Optimization mode
-	if (options["mode"] == "optimize")
+	if (parser.get("mode", "optimize") == "optimize")
 	{
 		for (size_t test = 1; true; test++)
 		{
@@ -180,55 +160,6 @@ int main(int argc, char* argv[])
 			std::this_thread::sleep_for(delay);
 		}
 	}
-}
-
-//======================================
-
-const char* GetOptionName(const char* str)
-{
-	return str == strstr(str, "--")
-		? str + 2
-		: nullptr;
-}
-
-std::map<std::string_view, std::string_view> ParseArguments(int argc, char* argv[])
-{
-	std::map<std::string_view, std::string_view> options;
-
-	for (size_t i = 1; i < argc; i++)
-	{
-		if (const char* option = GetOptionName(argv[i]))
-		{
-			if (i + 1 < argc && !GetOptionName(argv[i+1]))
-				options[option] = argv[++i];
-
-			else if (const char* value = strchr(argv[i], '='))
-				options[std::string_view(option, value - option)] = value + 1;
-
-			else
-				options[option] = "";
-		}
-	}
-
-	return options;
-}
-
-template<typename T>
-T GetNumericOption(
-	std::map<std::string_view, std::string_view>& options, 
-	const char* name, 
-	T default_value
-)
-{
-	if (!options.contains(name))
-		return default_value;
-
-	auto option = options[name];
-
-	T value;
-	return std::from_chars(option.data(), option.data() + option.length(), value).ec == std::errc::invalid_argument
-		? default_value
-		: value;
 }
 
 //======================================

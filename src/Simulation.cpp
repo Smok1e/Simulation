@@ -3,6 +3,7 @@
 #include <cmath>
 #include <random>
 
+#include "Distribution.hpp"
 #include "Simulation.hpp"
 
 //======================================
@@ -27,9 +28,8 @@ Simulation::Simulation(
 
 	if (shuffle)
 	{
-		std::random_device device;
-		std::mt19937 generator(device());
-		std::shuffle(m_operators.begin(), m_operators.end(), generator);
+		std::mt19937 random_engine(RandomSeed);
+		std::shuffle(m_operators.begin(), m_operators.end(), random_engine);
 	}
 }
 
@@ -110,7 +110,10 @@ void Simulation::displayStatistics(
 )
 {
 	if (options & DisplayOptions::SimulationTime)
+	{
+		stream << "Random seed: " << RandomSeed << std::endl;
 		stream << "Simulation time: " << m_time << std::endl << std::endl;
+	}
 
 	// Queue
 	if (options & DisplayOptions::Queue)
