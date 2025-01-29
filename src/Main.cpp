@@ -49,25 +49,101 @@ int main(int argc, char* argv[])
 
 	std::cout << TermColor::Push(TermColor::ForegroundDefault);
 
-	if (parser["seed"])
-		RandomSeed = parser["seed"];
-
-	// Resolving options
-	auto simulation_duration = parser.get("time", DEFAULT_SIMULATION_DURATION);
-	auto op1_count           = parser.get("op1",  DEFAULT_OP1_COUNT          );
-	auto op2_count           = parser.get("op2",  DEFAULT_OP2_COUNT          );
-	
-	bool shuffle = parser["shuffle"];
-	auto delay = std::chrono::milliseconds(parser.get("delay", DEFAULT_DELAY_MS));
-
-	auto max_avg_transaction_queued = parser.get("max-avg-tr", DEFAULT_AVG_TRANSACTION_QUEUE);
-	auto max_queue_size             = parser.get("max-queue", DEFAULT_MAX_QUEUE_SIZE        );
-
-	// Optimization mode
-	if (parser.get("mode", "optimize") == "optimize")
+	try
 	{
-		for (size_t test = 1; true; test++)
+		// Resolving options
+		if (parser["seed"])
+			RandomSeed = parser["seed"];
+
+		auto simulation_duration = parser.get("time", DEFAULT_SIMULATION_DURATION);
+		auto op1_count           = parser.get("op1",  DEFAULT_OP1_COUNT          );
+		auto op2_count           = parser.get("op2",  DEFAULT_OP2_COUNT          );
+	
+		bool shuffle = parser["shuffle"];
+		auto delay = std::chrono::milliseconds(parser.get("delay", DEFAULT_DELAY_MS));
+
+		auto max_avg_transaction_queued = parser.get("max-avg-tr", DEFAULT_AVG_TRANSACTION_QUEUE);
+		auto max_queue_size             = parser.get("max-queue", DEFAULT_MAX_QUEUE_SIZE        );
+
+		// Optimization mode
+		if (parser.get("mode", "optimize") == "optimize")
 		{
+			for (size_t test = 1; true; test++)
+			{
+				Simulation simulation(
+					op1_count, 
+					op2_count, 
+					max_avg_transaction_queued, 
+					max_queue_size, 
+					shuffle
+				);
+
+				for (size_t time = 0; time < simulation_duration; time++)
+					simulation.onTimeTick();
+
+				std::cout 
+					<< TermClear() << TermCursorPos(0, 0) 
+					<< "Test #" << test << ":" << std::endl;
+
+				simulation.displayStatistics(
+					std::cout, 
+					Simulation::Default 
+						& ~Simulation::OperatorsDetails
+						& ~Simulation::Queue
+						& ~Simulation::PendingTransactions
+				);
+
+				std::cout << std::endl;
+
+				auto op1_avg_load = simulation.getAverageOperatorLoad<Operator1>();
+				auto op2_avg_load = simulation.getAverageOperatorLoad<Operator2>();
+
+				std::cout 
+					<< "Operator1 average load: " 
+					<< std::setprecision(2) << std::fixed << op1_avg_load << std::endl;
+
+				std::cout 
+					<< "Operator2 average load: " 
+					<< std::setprecision(2) << std::fixed << op2_avg_load << std::endl;
+
+				std::cout << std::endl;
+
+				if (simulation)
+				{
+					std::cout 
+						<< TermColor::Push(TermColor::ForegroundGreen)
+						<< "Test complete" 
+						<< TermColor::Pop()
+						<< std::endl;
+
+					break;
+				}
+
+				if (op1_avg_load > op2_avg_load)
+				{
+					std::cout << "Increasing operators of type 1 number" << std::endl;
+					op1_count++;
+				}
+
+				else
+				{
+					std::cout << "Increasing operators of type 2 number" << std::endl;
+					op2_count++;
+				}
+
+				std::cout 
+					<< TermColor::Push(TermColor::ForegroundYellow)
+					<< "Restarting test" 
+					<< TermColor::Pop()
+					<< std::endl;
+
+				std::this_thread::sleep_for(delay);
+			}
+		}
+
+		// Interactive mode
+		else
+		{                           
 			Simulation simulation(
 				op1_count, 
 				op2_count, 
@@ -77,89 +153,24 @@ int main(int argc, char* argv[])
 			);
 
 			for (size_t time = 0; time < simulation_duration; time++)
+			{
 				simulation.onTimeTick();
 
-			std::cout 
-				<< TermClear() << TermCursorPos(0, 0) 
-				<< "Test #" << test << ":" << std::endl;
+				std::cout << TermClear() << TermCursorPos(0, 0);
+				simulation.displayStatistics();
 
-			simulation.displayStatistics(
-				std::cout, 
-				Simulation::Default 
-					& ~Simulation::OperatorsDetails
-					& ~Simulation::Queue
-					& ~Simulation::PendingTransactions
-			);
-
-			std::cout << std::endl;
-
-			auto op1_avg_load = simulation.getAverageOperatorLoad<Operator1>();
-			auto op2_avg_load = simulation.getAverageOperatorLoad<Operator2>();
-
-			std::cout 
-				<< "Operator1 average load: " 
-				<< std::setprecision(2) << std::fixed << op1_avg_load << std::endl;
-
-			std::cout 
-				<< "Operator2 average load: " 
-				<< std::setprecision(2) << std::fixed << op2_avg_load << std::endl;
-
-			std::cout << std::endl;
-
-			if (simulation)
-			{
-				std::cout 
-					<< TermColor::Push(TermColor::ForegroundGreen)
-					<< "Test complete" 
-					<< TermColor::Pop()
-					<< std::endl;
-
-				break;
+				std::this_thread::sleep_for(delay);
 			}
-
-			if (op1_avg_load > op2_avg_load)
-			{
-				std::cout << "Increasing operators of type 1 number" << std::endl;
-				op1_count++;
-			}
-
-			else
-			{
-				std::cout << "Increasing operators of type 2 number" << std::endl;
-				op2_count++;
-			}
-
-			std::cout 
-				<< TermColor::Push(TermColor::ForegroundYellow)
-				<< "Restarting test" 
-				<< TermColor::Pop()
-				<< std::endl;
-
-			std::this_thread::sleep_for(delay);
 		}
 	}
 
-	// Interactive mode
-	else
-	{                           
-		Simulation simulation(
-			op1_count, 
-			op2_count, 
-			max_avg_transaction_queued, 
-			max_queue_size, 
-			shuffle
-		);
-
-		for (size_t time = 0; time < simulation_duration; time++)
-		{
-			simulation.onTimeTick();
-
-			std::cout << TermClear() << TermCursorPos(0, 0);
-			simulation.displayStatistics();
-
-			std::this_thread::sleep_for(delay);
-		}
+	catch (ArgParserException exc)
+	{
+		std::cerr << exc.what() << std::endl;
+		return 1;
 	}
+
+	return 0;
 }
 
 //======================================

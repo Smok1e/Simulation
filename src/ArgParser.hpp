@@ -11,6 +11,15 @@
 
 //======================================
 
+class ArgParserException: public std::runtime_error
+{
+public:
+	using std::runtime_error::runtime_error;
+
+};
+
+//======================================
+
 class ArgParser
 {
 public:
@@ -121,7 +130,7 @@ template<std::integral T> requires (!std::same_as<T, bool>)
 T ArgParser::get(std::string_view option_name) const
 {
 	if (!contains(option_name))
-		throw std::runtime_error(std::format("missing number value for option {}", option_name));
+		throw ArgParserException(std::format("missing number value for option {}", option_name));
 
 	std::string_view option = m_options.at(option_name);
 
@@ -133,7 +142,7 @@ T ArgParser::get(std::string_view option_name) const
 	);
 
 	if (result.ec == std::errc::invalid_argument)
-		throw std::runtime_error(std::format("{} is not a valid numeric value for option {}", option, option_name));
+		throw ArgParserException(std::format("{} is not a valid numeric value for option {}", option, option_name));
 
 	return value;
 };
@@ -142,7 +151,7 @@ template<typename T> requires std::same_as<T, const char*>
 T ArgParser::get(std::string_view option_name) const
 {
 	if (!contains(option_name))
-		throw std::runtime_error(std::format("missing string for option {}", option_name));
+		throw ArgParserException(std::format("missing string for option {}", option_name));
 
 	return m_options.at(option_name).data();
 }
