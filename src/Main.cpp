@@ -1,7 +1,6 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
-#include <map>
 #include <string_view>
 #include <cstring>
 
@@ -54,6 +53,7 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 
+		std::cout << EscapeSequence::EnableAlternativeBuffer;
 		std::cout << TermColor::Push(TermColor::ForegroundDefault);
 
 		// Resolving options
@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
 					simulation.onTimeTick();
 
 				std::cout 
-					<< TermClear() << TermCursorPos(0, 0) 
+					<< EscapeSequence::Clear << TermCursorPos(0, 0) 
 					<< "Test #" << test << ":" << std::endl;
 
 				simulation.displayStatistics(
@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
 			{
 				simulation.onTimeTick();
 
-				std::cout << TermClear() << TermCursorPos(0, 0);
+				std::cout << EscapeSequence::Clear << TermCursorPos(0, 0);
 				simulation.displayStatistics();
 
 				std::this_thread::sleep_for(delay);
@@ -175,6 +175,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+	std::cout << EscapeSequence::DisableAlternativeBuffer;
 	return 0;
 }
 

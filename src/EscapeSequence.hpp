@@ -5,21 +5,40 @@
 
 //======================================
 
-class EscapeSequence
+class EscapeSequenceBase
 {
 public:
-	EscapeSequence() = default;
+	EscapeSequenceBase() = default;
 
-	friend std::ostream& operator<<(std::ostream& stream, const EscapeSequence& sequence);
+	friend std::ostream& operator<<(std::ostream& stream, const EscapeSequenceBase& sequence);
 
 protected:
-	virtual std::ostream& serialize(std::ostream& stream) const = 0; 
+	virtual std::ostream& serialize(std::ostream& stream) const = 0;
 
 };
 
 //======================================
 
-class TermColor: public EscapeSequence
+// Simple sequences
+class EscapeSequence: public EscapeSequenceBase
+{
+public:
+	EscapeSequence(const char* sequence);
+
+    static EscapeSequence Clear;
+	static EscapeSequence EnableAlternativeBuffer;
+	static EscapeSequence DisableAlternativeBuffer;
+
+private:
+	std::ostream& serialize(std::ostream& stream) const override;
+
+	const char* m_sequence;
+
+};
+
+//======================================
+
+class TermColor: public EscapeSequenceBase
 {
 public:
 	enum Color
@@ -55,7 +74,7 @@ protected:
 
 	Color m_color;
 
-	std::ostream& serialize(std::ostream& stream) const;
+	std::ostream& serialize(std::ostream& stream) const override;
 
 };
 
@@ -63,19 +82,7 @@ std::ostream& operator<<(std::ostream& stream, TermColor::Color color);
 
 //======================================
 
-class TermClear: public EscapeSequence
-{
-public:
-	using EscapeSequence::EscapeSequence;
-
-protected:
-	std::ostream& serialize(std::ostream& stream) const;
-
-};
-
-//======================================
-
-class TermCursorPos: public EscapeSequence
+class TermCursorPos: public EscapeSequenceBase
 {
 public:
 	TermCursorPos(unsigned x, unsigned y);
@@ -83,7 +90,7 @@ public:
 protected:
 	unsigned m_x, m_y;
 
-	std::ostream& serialize(std::ostream& stream) const;
+	std::ostream& serialize(std::ostream& stream) const override;
 
 };
 

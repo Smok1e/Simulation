@@ -2,10 +2,25 @@
 
 //======================================
 
-std::ostream& operator<<(std::ostream& stream, const EscapeSequence& sequence)
+std::ostream& operator<<(std::ostream& stream, const EscapeSequenceBase& sequence)
 {
 	return sequence.serialize(stream << "\x1B[");
 }
+
+//======================================
+
+EscapeSequence::EscapeSequence(const char* sequence):
+	m_sequence(sequence)
+{}
+
+std::ostream& EscapeSequence::serialize(std::ostream& stream) const
+{
+	return stream << m_sequence;
+}	
+
+EscapeSequence EscapeSequence::Clear                    = "2J";
+EscapeSequence EscapeSequence::EnableAlternativeBuffer  = "?1049h";
+EscapeSequence EscapeSequence::DisableAlternativeBuffer = "?1049l";
 
 //======================================
 
@@ -35,13 +50,6 @@ TermColor TermColor::Pop()
 {
 	s_stack.pop();
 	return TermColor(s_stack.top());
-}
-
-//======================================
-
-std::ostream& TermClear::serialize(std::ostream& stream) const
-{
-	return stream << "2J";
 }
 
 //======================================
