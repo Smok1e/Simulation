@@ -9,6 +9,7 @@
 #include "Simulation.hpp"
 #include "EscapeSequence.hpp"
 #include "ArgParser.hpp"
+#include "TerminationHandler.hpp"
 
 using namespace std::chrono_literals;
 
@@ -21,7 +22,7 @@ int main(int argc, char* argv[])
 		{"version",         "Print build information and exit"                           },
 		{"seed",            "Set random seed",                                       true},
 		{"mode",            "Set simulation mode",                                   true},
-		{"time",            "Set simulation duration",                               true},
+		{"time",            "Set simulation duration (optimize mode)",               true},
 		{"delay",           "Set delay in milliseconds",                             true},
 		{"max-avg-tr", 'X', "Set target average transactions limit (optimize mode)", true},
 		{"max-queue",  'Y', "Set target queue size limit (optimize mode)",           true},
@@ -53,8 +54,9 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 
-		std::cout << EscapeSequence::EnableAlternativeBuffer;
+		// Initializing terminal
 		std::cout << TermColor::Push(TermColor::ForegroundDefault);
+		SetupTerminationHandler();
 
 		// Resolving options
 		if (parser["seed"])
@@ -73,7 +75,7 @@ int main(int argc, char* argv[])
 		// Optimization mode
 		if (parser["mode"].as<std::string_view>("interactive") == "optimize")
 		{
-			for (size_t test = 1; true; test++)
+			for (size_t test = 1; !TerminationReceived; test++)
 			{
 				Simulation simulation(
 					op1_count, 
@@ -157,7 +159,9 @@ int main(int argc, char* argv[])
 				shuffle
 			);
 
-			for (size_t time = 0; time < simulation_duration; time++)
+			std::cout << EscapeSequence::EnableAlternativeBuffer;
+
+			while (!TerminationReceived)
 			{
 				simulation.onTimeTick();
 
@@ -166,6 +170,8 @@ int main(int argc, char* argv[])
 
 				std::this_thread::sleep_for(delay);
 			}
+
+			std::cout << EscapeSequence::DisableAlternativeBuffer;
 		}
 	}
 
@@ -175,7 +181,6 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	std::cout << EscapeSequence::DisableAlternativeBuffer;
 	return 0;
 }
 

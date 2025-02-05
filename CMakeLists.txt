@@ -18,6 +18,7 @@ add_executable(
 	"src/Main.cpp"
 	"src/EscapeSequence.cpp"
 	"src/ArgParser.cpp"
+	"src/TerminationHandler.cpp"
 )
 
 option(
@@ -28,6 +29,10 @@ option(
 
 if (STL_DISTRIBUTION)
 	add_compile_definitions(SIMULATION_DISTRIBUTION_USE_STL)
+endif ()
+
+if (WIN32)
+	add_compile_definitions(SIMULATION_WINDOWS)
 endif ()
 
 string(TIMESTAMP CURRENT_TIME "%d.%m.%Y %H:%M:%S")
