@@ -18,25 +18,30 @@ using namespace std::chrono_literals;
 int main(int argc, char* argv[])
 {
 	ArgParser parser {
-		{"help",            "Print usage reference and exit"                       },
-		{"version",         "Print build information and exit"                     },
-		{"seed",            "Set random seed"                                      },
-		{"mode",            "Set simulation mode"                                  },
-		{"time",            "Set simulation duration"                              },
-		{"delay",           "Set delay in milliseconds"                            },
-		{"max-avg-tr", 'X', "Set target average transactions limit (optimize mode)"},
-		{"max-queue",  'Y', "Set target queue size limit (optimize mode)"          },
-		{"op1",        '1', "Set number of operators of type 1"                    },
-		{"op2",        '2', "Set number of operators of type 2"                    },
-		{"shuffle",    'S', "Enable operator shuffling"                            }
+		{"help",            "Print usage reference and exit"                             },
+		{"version",         "Print build information and exit"                           },
+		{"seed",            "Set random seed",                                       true},
+		{"mode",            "Set simulation mode",                                   true},
+		{"time",            "Set simulation duration",                               true},
+		{"delay",           "Set delay in milliseconds",                             true},
+		{"max-avg-tr", 'X', "Set target average transactions limit (optimize mode)", true},
+		{"max-queue",  'Y', "Set target queue size limit (optimize mode)",           true},
+		{"op1",        '1', "Set number of operators of type 1",                     true},
+		{"op2",        '2', "Set number of operators of type 2",                     true},
+		{"shuffle",    'S', "Enable operator shuffling"                                  }
 	};
-
+					 
 	parser.parse(argc, argv);
 
 	// Display help and exit
 	if (parser["help"])
 	{
-		std::cout << parser << std::endl;
+		std::cout 
+			<< "Usage: " << parser.getExecutablePath().filename().string() << " [OPTIONS]" << std::endl
+			<< std::endl
+			<< "Available options:" << std::endl
+			<< parser << std::endl;
+
 		return 0;
 	}
 
@@ -55,18 +60,18 @@ int main(int argc, char* argv[])
 		if (parser["seed"])
 			RandomSeed = parser["seed"];
 
-		auto simulation_duration = parser.get("time", DEFAULT_SIMULATION_DURATION);
-		auto op1_count           = parser.get("op1",  DEFAULT_OP1_COUNT          );
-		auto op2_count           = parser.get("op2",  DEFAULT_OP2_COUNT          );
+		auto simulation_duration = parser["time"](DEFAULT_SIMULATION_DURATION);
+		auto op1_count           = parser["op1" ](DEFAULT_OP1_COUNT);
+		auto op2_count           = parser["op2" ](DEFAULT_OP2_COUNT);
 	
 		bool shuffle = parser["shuffle"];
-		auto delay = std::chrono::milliseconds(parser.get("delay", DEFAULT_DELAY_MS));
+		auto delay = std::chrono::milliseconds(parser["delay"](DEFAULT_DELAY_MS));
 
-		auto max_avg_transaction_queued = parser.get("max-avg-tr", DEFAULT_AVG_TRANSACTION_QUEUE);
-		auto max_queue_size             = parser.get("max-queue", DEFAULT_MAX_QUEUE_SIZE        );
+		auto max_avg_transaction_queued = parser["max-avg-tr"](DEFAULT_AVG_TRANSACTION_QUEUE);
+		auto max_queue_size             = parser["max-queue" ](DEFAULT_MAX_QUEUE_SIZE       );
 
 		// Optimization mode
-		if (parser.get("mode", "optimize") == "optimize")
+		if (parser["mode"].as<std::string_view>("interactive") == "optimize")
 		{
 			for (size_t test = 1; true; test++)
 			{
@@ -164,7 +169,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	catch (ArgParserException exc)
+	catch (const ArgParserException& exc)
 	{
 		std::cerr << exc.what() << std::endl;
 		return 1;
