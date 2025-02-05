@@ -1,6 +1,8 @@
 #include <chrono>
 #include <iostream>
 #include <ostream>
+#include <mutex>
+#include <condition_variable>
 
 #include "SignalHandler.hpp"
 
@@ -10,13 +12,31 @@
 
 #include <Windows.h>
 
+std::condition_variable InterruptCV;
+std::atomic_bool Interrupted = false;
+
 BOOL WINAPI ConsoleCtrlHandlerRoutine(DWORD signal)
 {
-	TerminationReceived = true;
+	if (signal != CTRL_C_EVENT && signal != CTRL_BREAK_EVENT)
+		return FALSE;
+
+	Interrupted = true;
+	InterruptCV.notify_all();
+
 	return TRUE;
 }
 
-bool SetupTerminationHandler()
+bool WaitSignal(std::chrono::nanoseconds timeout)
+{
+	std::mutex mutex;
+	std::unique_lock lock(mutex);
+	InterruptCV.wait_for(lock, timeout);
+
+	// Avoid spurious wakeups
+	return Interrupted;
+}
+
+bool SetupSignalHandler()
 {
 	if (!SetConsoleCtrlHandler(ConsoleCtrlHandlerRoutine, TRUE))
 	{

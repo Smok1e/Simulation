@@ -56,7 +56,8 @@ int main(int argc, char* argv[])
 
 		// Initializing terminal
 		std::cout << TermColor::Push(TermColor::ForegroundDefault);
-		SetupSignalHandler();
+		if (!SetupSignalHandler())
+			return 1;
 
 		// Resolving options
 		if (parser["seed"])
@@ -71,8 +72,6 @@ int main(int argc, char* argv[])
 
 		auto max_avg_transaction_queued = parser["max-avg-tr"](DEFAULT_AVG_TRANSACTION_QUEUE);
 		auto max_queue_size             = parser["max-queue" ](DEFAULT_MAX_QUEUE_SIZE       );
-
-		std::cout << EscapeSequence::EnableAlternativeBuffer;
 
 		// Optimization mode
 		if (parser["mode"].as<std::string_view>("interactive") == "optimize")
@@ -121,12 +120,10 @@ int main(int argc, char* argv[])
 				{
 					std::cout 
 						<< TermColor::Push(TermColor::ForegroundGreen)
-						<< "Test complete, press enter to continue" 
+						<< "Test complete" 
 						<< TermColor::Pop()
 						<< std::endl;
 
-					std::cin.get();
-					break;
 				}
 
 				if (op1_avg_load > op2_avg_load)
@@ -153,6 +150,8 @@ int main(int argc, char* argv[])
 		// Interactive mode
 		else
 		{                           
+			std::cout << EscapeSequence::EnableAlternativeBuffer;
+
 			Simulation simulation(
 				op1_count, 
 				op2_count, 
@@ -168,9 +167,9 @@ int main(int argc, char* argv[])
 				std::cout << EscapeSequence::Clear << TermCursorPos(0, 0);
 				simulation.displayStatistics();
 			}
-		}
 
-		std::cout << EscapeSequence::DisableAlternativeBuffer;
+			std::cout << EscapeSequence::DisableAlternativeBuffer;
+		}
 	}
 
 	catch (const ArgParserException& exc)
