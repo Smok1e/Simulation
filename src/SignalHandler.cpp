@@ -1,10 +1,8 @@
+#include <chrono>
 #include <iostream>
+#include <ostream>
 
-#include "TerminationHandler.hpp"
-
-//======================================
-
-std::atomic_bool TerminationReceived = false;
+#include "SignalHandler.hpp"
 
 //======================================
 
@@ -42,26 +40,31 @@ bool SetupTerminationHandler()
 	return true;
 }
 
-#else
+#else                           
 
 #include <cerrno>
 #include <cstring>
 #include <signal.h>
 
-void SignalHandler(int)
+bool SetupSignalHandler()
 {
-	TerminationReceived = true;
+	// No need to setup custom signal handler on unix
+	return true;
 }
 
-bool SetupTerminationHandler()
+bool WaitSignal(std::chrono::nanoseconds nanoseconds)
 {
-	if (signal(SIGINT, SignalHandler) == SIG_ERR)
-	{
-		std::cerr << "Unable to set signal handler: " << std::strerror(errno) << std::endl;
-		return false;
-	}
+	sigset_t set = {};
+	sigemptyset(&set);
+	sigaddset(&set, SIGINT);
 
-	return true;
+	auto seconds = std::chrono::duration_cast<std::chrono::seconds>(nanoseconds);
+
+    timespec time = {};
+	time.tv_sec = seconds.count();
+	time.tv_nsec = (nanoseconds - seconds).count();
+
+	return sigtimedwait(&set, nullptr, &time) == SIGINT;
 }
 
 #endif

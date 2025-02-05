@@ -1,15 +1,15 @@
 #include <iostream>
-#include <thread>
 #include <chrono>
 #include <string_view>
 #include <cstring>
 
 #include "Distribution.hpp"
 #include "Config.hpp"
+#include "SignalHandler.hpp"
 #include "Simulation.hpp"
 #include "EscapeSequence.hpp"
 #include "ArgParser.hpp"
-#include "TerminationHandler.hpp"
+#include "SignalHandler.hpp"
 
 using namespace std::chrono_literals;
 
@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
 
 		// Initializing terminal
 		std::cout << TermColor::Push(TermColor::ForegroundDefault);
-		SetupTerminationHandler();
+		SetupSignalHandler();
 
 		// Resolving options
 		if (parser["seed"])
@@ -72,10 +72,12 @@ int main(int argc, char* argv[])
 		auto max_avg_transaction_queued = parser["max-avg-tr"](DEFAULT_AVG_TRANSACTION_QUEUE);
 		auto max_queue_size             = parser["max-queue" ](DEFAULT_MAX_QUEUE_SIZE       );
 
+		std::cout << EscapeSequence::EnableAlternativeBuffer;
+
 		// Optimization mode
 		if (parser["mode"].as<std::string_view>("interactive") == "optimize")
 		{
-			for (size_t test = 1; !TerminationReceived; test++)
+			for (size_t test = 1; !WaitSignal(delay); test++)
 			{
 				Simulation simulation(
 					op1_count, 
@@ -119,10 +121,11 @@ int main(int argc, char* argv[])
 				{
 					std::cout 
 						<< TermColor::Push(TermColor::ForegroundGreen)
-						<< "Test complete" 
+						<< "Test complete, press enter to continue" 
 						<< TermColor::Pop()
 						<< std::endl;
 
+					std::cin.get();
 					break;
 				}
 
@@ -140,11 +143,10 @@ int main(int argc, char* argv[])
 
 				std::cout 
 					<< TermColor::Push(TermColor::ForegroundYellow)
-					<< "Restarting test" 
+					<< "Restarting test"
 					<< TermColor::Pop()
 					<< std::endl;
 
-				std::this_thread::sleep_for(delay);
 			}
 		}
 
@@ -159,20 +161,16 @@ int main(int argc, char* argv[])
 				shuffle
 			);
 
-			std::cout << EscapeSequence::EnableAlternativeBuffer;
-
-			while (!TerminationReceived)
+			while (!WaitSignal(delay))
 			{
 				simulation.onTimeTick();
 
 				std::cout << EscapeSequence::Clear << TermCursorPos(0, 0);
 				simulation.displayStatistics();
-
-				std::this_thread::sleep_for(delay);
 			}
-
-			std::cout << EscapeSequence::DisableAlternativeBuffer;
 		}
+
+		std::cout << EscapeSequence::DisableAlternativeBuffer;
 	}
 
 	catch (const ArgParserException& exc)

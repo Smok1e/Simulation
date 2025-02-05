@@ -18,7 +18,7 @@ add_executable(
 	"src/Main.cpp"
 	"src/EscapeSequence.cpp"
 	"src/ArgParser.cpp"
-	"src/TerminationHandler.cpp"
+	"src/SignalHandler.cpp"
 )
 
 option(
