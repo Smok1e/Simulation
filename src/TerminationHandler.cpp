@@ -18,7 +18,7 @@ BOOL WINAPI ConsoleCtrlHandlerRoutine(DWORD signal)
 	return TRUE;
 }
 
-void SetupTerminationHandler()
+bool SetupTerminationHandler()
 {
 	if (!SetConsoleCtrlHandler(ConsoleCtrlHandlerRoutine, TRUE))
 	{
@@ -35,10 +35,34 @@ void SetupTerminationHandler()
 
 		std::cerr << "Unable to set console control handler: " << message << std::endl;
 		LocalFree(message);
+
+		return false;
 	}
+
+	return true;
 }
 
-#elif
+#else
+
+#include <cerrno>
+#include <cstring>
+#include <signal.h>
+
+void SignalHandler(int)
+{
+	TerminationReceived = true;
+}
+
+bool SetupTerminationHandler()
+{
+	if (signal(SIGINT, SignalHandler) == SIG_ERR)
+	{
+		std::cerr << "Unable to set signal handler: " << std::strerror(errno) << std::endl;
+		return false;
+	}
+
+	return true;
+}
 
 #endif
 

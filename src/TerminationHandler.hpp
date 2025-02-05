@@ -5,7 +5,7 @@
 //======================================
 
 // Initialize system-specific signal handler
-void SetupTerminationHandler();
+bool SetupTerminationHandler();
 
 // This flag can be used to check whether program received termination signal or not
 extern std::atomic_bool TerminationReceived;
