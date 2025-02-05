@@ -31,31 +31,31 @@ int main(int argc, char* argv[])
 		{"shuffle",    'S', "Enable operator shuffling"                                  }
 	};
 					 
-	parser.parse(argc, argv);
-
-	// Display help and exit
-	if (parser["help"])
-	{
-		std::cout 
-			<< "Usage: " << parser.getExecutablePath().filename().string() << " [OPTIONS]" << std::endl
-			<< std::endl
-			<< "Available options:" << std::endl
-			<< parser << std::endl;
-
-		return 0;
-	}
-
-	// Display version and exit
-	if (parser["version"])
-	{
-		std::cout << SIMULATION_VERSION_INFO << std::endl;
-		return 0;
-	}
-
-	std::cout << TermColor::Push(TermColor::ForegroundDefault);
-
 	try
 	{
+		parser.parse(argc, argv);
+
+		// Display help and exit
+		if (parser["help"])
+		{
+			std::cout 
+				<< "Usage: " << parser.getExecutablePath().filename().string() << " [OPTIONS]" << std::endl
+				<< std::endl
+				<< "Available options:" << std::endl
+				<< parser << std::endl;
+
+			return 0;
+		}
+
+		// Display version and exit
+		if (parser["version"])
+		{
+			std::cout << SIMULATION_VERSION_INFO << std::endl;
+			return 0;
+		}
+
+		std::cout << TermColor::Push(TermColor::ForegroundDefault);
+
 		// Resolving options
 		if (parser["seed"])
 			RandomSeed = parser["seed"];
