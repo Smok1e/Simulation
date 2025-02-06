@@ -1,5 +1,3 @@
-#include <chrono>
-
 #include "SignalHandler.hpp"
 
 //======================================
@@ -7,6 +5,7 @@
 #ifdef SIMULATION_WINDOWS
 
 #include <condition_variable>
+#include <atomic>
 
 #include <Windows.h>
 
