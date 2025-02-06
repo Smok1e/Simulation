@@ -6,6 +6,7 @@
 
 #include <condition_variable>
 #include <atomic>
+#include <iostream>
 
 #include <Windows.h>
 
@@ -84,6 +85,6 @@ bool WaitSignal(std::chrono::nanoseconds nanoseconds)
 	return sigtimedwait(&set, nullptr, &time) == SIGINT;
 }
 
-#endif
+#endif // SIMULATION_WINDOWS
 
 //======================================
