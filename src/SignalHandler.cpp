@@ -1,14 +1,12 @@
 #include <chrono>
-#include <iostream>
-#include <ostream>
-#include <mutex>
-#include <condition_variable>
 
 #include "SignalHandler.hpp"
 
 //======================================
 
 #ifdef SIMULATION_WINDOWS
+
+#include <condition_variable>
 
 #include <Windows.h>
 
@@ -68,7 +66,7 @@ bool SetupSignalHandler()
 
 bool SetupSignalHandler()
 {
-	// No need to setup custom signal handler on unix
+	signal(SIGINT, [](int){});
 	return true;
 }
 

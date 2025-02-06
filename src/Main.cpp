@@ -124,6 +124,7 @@ int main(int argc, char* argv[])
 						<< TermColor::Pop()
 						<< std::endl;
 
+					break;
 				}
 
 				if (op1_avg_load > op2_avg_load)
