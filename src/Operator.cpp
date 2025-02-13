@@ -7,16 +7,27 @@
 
 //======================================
 
+Operator::Operator(size_t index):
+	m_index(index)
+{}
+
 Operator::~Operator()
 {}
 
 bool Operator::isFree() const
 {
-	return !m_remaining_processing_time;
+	return m_current_transaction == Transaction::None;
 }
 
 bool Operator::processTransaction(Transaction transaction)
 {
+	if (transaction == Transaction::None)
+	{
+		m_load_time += m_processing_time;
+		m_current_transaction = transaction;
+		return true;
+	}
+
 	if (!isFree())
 		return false;
 
@@ -24,29 +35,24 @@ bool Operator::processTransaction(Transaction transaction)
 	if (processing_time < 0)
 		return false;
 
+	m_processing_time = processing_time;
 	m_current_transaction = transaction;
-	m_remaining_processing_time = m_processing_time = processing_time;
-
 	return true;
 }
 
-void Operator::onTimeTick()
+int Operator::getProcessingTime() const
 {
-	if (!(m_remaining_processing_time -= !!m_remaining_processing_time))
-		m_current_transaction = Transaction::None;
-
-	else
-		m_load_ticks++;
+	return m_processing_time;
 }
 
-unsigned Operator::getLoadTicks() const
+int Operator::getLoadTime() const
 {
-	return m_load_ticks;
+	return m_load_time;
 }
 
-std::ostream& operator<<(std::ostream& stream, const Operator& op)
+Transaction Operator::getCurrentTransaction() const
 {
-	return stream << TermColor::Push(op.getColor()) << op.getName() << TermColor::Pop();
+	return m_current_transaction;
 }
 
 std::ostream& Operator::displayDetails(std::ostream& stream) const
@@ -54,29 +60,28 @@ std::ostream& Operator::displayDetails(std::ostream& stream) const
 	stream << *this << ": ";
 
 	if (isFree())
-		stream << TermColor::ForegroundGreen << "Free" << TermColor::ForegroundDefault;
+		stream 
+			<< TermColor::Push(TermColor::ForegroundGreen) 
+			<< "Free" 
+			<< TermColor::Pop();
 
 	else
 	{
-        stream 
-			<< std::right
+		stream
 			<< TermColor::Push(TermColor::ForegroundBlue)
-			<< "Processing " << m_current_transaction << ' '
-			<< std::setw(3) << m_processing_time - m_remaining_processing_time << " / "
-			<< std::setw(3) << m_processing_time << "s "
+			<< "Processing " << m_current_transaction << "..."
 			<< TermColor::Pop();
-
-		constexpr size_t max_width = 30;
-		size_t width = max_width * static_cast<double>(m_remaining_processing_time) / m_processing_time;
-
-		stream 
-			<< '['
-			<< std::setfill('=') << std::setw(max_width - width) << ">"
-			<< std::setfill(' ') << std::setw(            width) << ""
-			<< ']';
 	}
 
-	return stream;	
+	return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const Operator& op)
+{
+	return stream 
+		<< TermColor::Push(op.getColor()) 
+		<< op.getName() << " [" << std::setw(2) << op.m_index << ']'
+		<< TermColor::Pop(); 
 }
 
 //======================================

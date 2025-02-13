@@ -21,66 +21,100 @@ Simulation::Simulation(
 	m_target_queue_size(max_queue_size)
 {
 	for (size_t i = 0; i < op1_count; i++)
-		m_operators.push_back(new Operator1);
+		m_operators.push_back(new Operator1(i));
 
 	for (size_t i = 0; i < op2_count; i++)
-		m_operators.push_back(new Operator2);
+		m_operators.push_back(new Operator2(i));
 
 	if (shuffle)
 	{
 		std::mt19937 random_engine(RandomSeed);
 		std::shuffle(m_operators.begin(), m_operators.end(), random_engine);
 	}
+
+	// Start sequence of transaction income events for each transaction type
+	for (size_t i = 0; i < static_cast<size_t>(Transaction::Amount); i++)
+		enqueueEvent(new TransactionIncomeEvent(m_current_time, static_cast<Transaction>(i)));
 }
 
 Simulation::~Simulation()
 {
+	for (auto* event: m_event_queue)
+		delete event;
+
 	for (auto* op: m_operators)
 		delete op;
 }
 
 //======================================
 
-void Simulation::onTimeTick()
+void Simulation::enqueueEvent(Event* event)
 {
-	m_time++;
+	m_event_queue.insert(event);
+}
 
-	// Generating future transactions
-	for (size_t i = 0; i < std::size(m_pending_transactions); i++)
-	{
-		if (!m_pending_transactions[i])
-		{
-			auto transaction = static_cast<Transaction>(i);
+void Simulation::enqueueTransaction(Transaction transaction)
+{
+	if (!processTransaction(transaction))
+		m_transaction_queue.push_back(transaction);
+}
 
-			m_queue.push_back(transaction);
-			m_pending_transactions[i] = GenerateTransactionDelay(transaction);
-		}
-
-		else
-			m_pending_transactions[i]--;
-	}
-
-	// Processing current transactions
-	for (int i = 0; i < m_queue.size(); i++)
-	{
-		for (auto* op: m_operators)
-		{
-			if (op->processTransaction(m_queue[i]))
-			{
-				m_queue.erase(m_queue.begin() + i--);
-				break;
-			}
-		}
-	}
-
+bool Simulation::processTransaction(Transaction transaction)
+{
 	for (auto* op: m_operators)
-		op->onTimeTick();
+	{
+		if (op->processTransaction(transaction))
+		{
+			enqueueEvent(new TransactionProcessedEvent(m_current_time, op));
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool Simulation::loadOperator(Operator* op)
+{
+	auto iter = std::find_if(
+		m_transaction_queue.begin(),
+		m_transaction_queue.end(),
+		[&](Transaction transaction) -> bool
+		{
+			if (op->processTransaction(transaction))
+			{
+				enqueueEvent(new TransactionProcessedEvent(m_current_time, op));
+				return true;
+			}
+
+			return false;
+		}
+	);
+
+	if (iter == m_transaction_queue.end())
+		return false;
+
+	m_transaction_queue.erase(iter);
+	return true;
+}
+
+//======================================
+
+void Simulation::advance()
+{
+	if (m_event_queue.empty())
+		throw std::runtime_error("No more events to process");
+
+	auto* event = m_event_queue.extract(m_event_queue.begin()).value();
+
+	m_current_time = event->getTime();
+	event->process(this);
+	delete event;
 
 	// Updating statistics
-	for (const auto& transaction: m_queue)
+	for (const auto& transaction: m_transaction_queue)
 		m_total_queued_transactions[static_cast<int>(transaction)]++;
 
-	m_max_queue_size = std::max<int>(m_max_queue_size, m_queue.size());
+	m_max_queue_size = std::max<int>(m_max_queue_size, m_transaction_queue.size());
 }
 
 //======================================
@@ -89,7 +123,7 @@ double Simulation::getAverageQueuedTransactions(Transaction transaction) const
 {
 	return static_cast<double>(
 		m_total_queued_transactions[static_cast<int>(transaction)]
-	) / m_time;
+	) / m_current_time;
 }
 
 int Simulation::getMaxQueueSize() const
@@ -97,9 +131,9 @@ int Simulation::getMaxQueueSize() const
 	return m_max_queue_size;
 }
 
-int Simulation::getTime() const
+int Simulation::getCurrentTime() const
 {
-	return m_time;
+	return m_current_time;
 }
 
 //======================================
@@ -112,34 +146,38 @@ void Simulation::displayStatistics(
 	if (options & DisplayOptions::SimulationTime)
 	{
 		stream << "Random seed: " << RandomSeed << std::endl;
-		stream << "Simulation time: " << m_time << std::endl << std::endl;
+		stream << "Simulation time: " << m_current_time << std::endl << std::endl;
+	}
+
+	// Pending events
+	if (options & DisplayOptions::EventQueue)
+	{
+		stream << "Event queue:" << std::endl;
+
+		if (!m_event_queue.empty())
+		{
+			int time_digits = std::floor(1 + std::log10((*m_event_queue.rbegin())->getTime()));
+
+			for (auto* event: m_event_queue)
+				std::cout << std::setw(time_digits) << event->getTime() << ": " << *event << std::endl;
+
+			stream << std::endl;
+		}
 	}
 
 	// Queue
 	if (options & DisplayOptions::Queue)
 	{
-		stream << "Queue (" << m_queue.size() << "): ";	  
-		if (m_queue.empty())
+		stream << "Queue (" << m_transaction_queue.size() << "): ";	  
+		if (m_transaction_queue.empty())
 			stream << "[empty]";
 
 		else
-			for (auto transaction: m_queue)
+			for (auto transaction: m_transaction_queue)
 				stream << transaction << ' ';
 
 		stream << std::endl << std::endl;
 	}
-
-	// Pending transactions
-	if (options & DisplayOptions::PendingTransactions)
-	{
-		stream << "Transactions:" << std::endl;
-		for (int i = 0; i < static_cast<int>(Transaction::Amount); i++)
-			stream << "Type " << static_cast<Transaction>(i) << " pending in " << m_pending_transactions[i] << std::endl;
-
-		stream << std::endl;
-	}
-
-	int operator_number_max_length = std::floor(1 + std::log10(m_operators.size()));
 
 	// Operators
 	if (options & DisplayOptions::Operators)
@@ -147,18 +185,13 @@ void Simulation::displayStatistics(
 		stream << "Operators:" << std::endl;
 
 		if (options & DisplayOptions::OperatorsDetails)
-		{
 			for (size_t i = 0; i < m_operators.size(); i++)
-				m_operators[i]->displayDetails(
-					stream << "[" << std::right << std::setw(operator_number_max_length) << i + 1 << "] - "
-				) << std::endl;
-		}
+				m_operators[i]->displayDetails(stream) << std::endl;
 
 		else
-		{
-			std::cout << m_op1_count << " operators of type 1" << std::endl;
-			std::cout << m_op2_count << " operators of type 2" << std::endl;
-		}
+			stream 
+				<< m_op1_count << " operators of type 1" << std::endl
+				<< m_op2_count << " operators of type 2" << std::endl;
 
 		stream << std::endl;
 	}
@@ -172,16 +205,22 @@ void Simulation::displayStatistics(
 			auto avg = getAverageQueuedTransactions(static_cast<Transaction>(i));
 
 			stream 
-				<< "Average queued transactions of type " << static_cast<Transaction>(i) << ": " 
-				<< TermColor::Push(
-					avg <= m_target_avg_transaction_queued
-						? TermColor::ForegroundGreen
-						: TermColor::ForegroundRed
-				)
-				<< std::fixed << std::setprecision(2) << avg
-				<< " / " << m_target_avg_transaction_queued
-				<< TermColor::Pop()
-				<< std::endl;
+				<< "Average queued transactions of type " << static_cast<Transaction>(i) << ": ";
+
+			if (m_current_time == 0)
+				stream << "N/A" << std::endl;
+
+			else
+				stream
+					<< TermColor::Push(
+						avg <= m_target_avg_transaction_queued
+							? TermColor::ForegroundGreen
+							: TermColor::ForegroundRed
+					)
+					<< std::fixed << std::setprecision(2) << avg
+					<< " / " << m_target_avg_transaction_queued
+					<< TermColor::Pop()
+					<< std::endl;
 		}
 
 		stream << std::endl;
@@ -190,10 +229,15 @@ void Simulation::displayStatistics(
 		for (size_t i = 0; i < m_operators.size(); i++)
 		{
 			stream
-				<< "Operator #" << std::setw(operator_number_max_length) << std::left << i + 1 
-				<< " (" << *m_operators[i] << ") average load: " 
-				<< std::fixed << std::setprecision(2) << static_cast<double>(m_operators[i]->getLoadTicks()) / m_time
-				<< std::endl;
+				<< *m_operators[i] << " average load: ";
+
+			if (m_current_time == 0)
+				stream << "N/A" << std::endl;
+
+			else
+				stream
+					<< std::fixed << std::setprecision(2) << static_cast<double>(m_operators[i]->getLoadTime()) / m_current_time
+					<< std::endl;
 		}
 		
 		stream << std::endl;

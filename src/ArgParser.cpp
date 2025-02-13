@@ -35,7 +35,30 @@ ArgParser::OptionDef::OptionDef(
 
 ArgParser::ArgParser(const std::initializer_list<OptionDef>& options):
 	m_available_options(options)
-{}
+{
+	// Prevent short option duplicates
+	for (auto current = m_available_options.begin(); current < m_available_options.end(); current++)
+	{
+		auto duplicate = std::find_if(
+			std::next(current),
+			m_available_options.end(),
+			[&](OptionDef& option) -> bool
+			{
+				return current->m_short_name == option.m_short_name;
+			}
+		);
+
+		if (duplicate != m_available_options.end())
+			throw std::runtime_error(
+				std::format(
+					"found short option duplicates for -{} (--{} and --{})", 
+					current->m_short_name,
+					current->m_full_name,
+					duplicate->m_full_name
+				)
+			);
+	}
+}
 
 void ArgParser::parse(int argc, char* argv[])
 {
