@@ -15,11 +15,18 @@ add_executable(
 	"src/Transaction.cpp"
 	"src/Operator.cpp"
 	"src/Simulation.cpp"
-	"src/Main.cpp"
 	"src/EscapeSequence.cpp"
 	"src/ArgParser.cpp"
 	"src/SignalHandler.cpp"
 	"src/Event.cpp"
+	"src/Main.cpp"
+)
+
+add_executable(
+	TerminalTest
+	"src/EscapeSequence.cpp"
+	"src/Terminal.cpp"
+	"src/TerminalTest.cpp"
 )
 
 option(
