@@ -33,7 +33,17 @@ std::pair<size_t, size_t> GetTerminalWindowSize()
 
 #else
 
-#error "слыш"
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <cstdio>
+
+std::pair<size_t, size_t> GetTerminalWindowSize()
+{
+	winsize size = {};
+	ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
+
+	return {size.ws_col, size.ws_row};
+}
 
 #endif // SIMULATION_WINDOWS
 
