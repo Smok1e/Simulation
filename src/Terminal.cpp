@@ -10,6 +10,8 @@ namespace esc
 	const char* alt_buffer_disable = "?1049l";
 	const char* clear              = "2J";
 	const char* hide_cursor        = "?25l";
+	const char* show_cursor        = "?25h";
+    const char* reset              = "0m";
 
 	unsigned bgcolor_offset = 40;
 	unsigned fgcolor_offset = 30;
@@ -74,9 +76,9 @@ Terminal::Terminal(bool restore /*= true*/, std::ostream* stream /*= &std::cout*
 	setForegroundColor(Color::Default, true);
 
 	*m_stream << esc::begin << esc::clear;
+	*m_stream << esc::begin << esc::hide_cursor;
 
 	setCursorPosition(0, 0);
-	*m_stream << esc::begin << esc::hide_cursor;
 
 	m_buffer.resize(m_width * m_height);
 	m_back_buffer = m_buffer;
@@ -86,6 +88,9 @@ Terminal::~Terminal()
 {
 	if (m_restore)
 		*m_stream << esc::begin << esc::alt_buffer_disable;
+
+    *m_stream << esc::begin << esc::show_cursor;
+    *m_stream << esc::begin << esc::reset;
 }
 
 //======================================

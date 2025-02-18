@@ -177,6 +177,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+	std::cout << std::endl;
 	return 0;
 }
 
@@ -331,4 +332,4 @@ void DisplaySimulationStatus(
 	stream.setPadding(padding);
 }
 
-//======================================
+//=====================================
