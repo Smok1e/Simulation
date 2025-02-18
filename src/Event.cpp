@@ -12,7 +12,7 @@ size_t Event::getTime() const
 	return m_time;
 }
 
-std::ostream& operator<<(std::ostream& stream, const Event& event)
+TerminalStream& operator<<(TerminalStream& stream, const Event& event)
 {
 	return event.serialize(stream);
 }
@@ -42,9 +42,13 @@ void TransactionIncomeEvent::process(Simulation* simulation)
 	);
 }
 
-std::ostream& TransactionIncomeEvent::serialize(std::ostream& stream) const
+TerminalStream& TransactionIncomeEvent::serialize(TerminalStream& stream) const
 {
-	return stream << "Transaction " << m_transaction << " pending";
+	stream << "Transaction ";
+	stream << m_transaction;
+	stream << " pending";
+
+	return stream;
 }
 
 //======================================
@@ -59,9 +63,14 @@ void TransactionProcessedEvent::process(Simulation* simulation)
 	m_operator->processTransaction(Transaction::None);
 }
 
-std::ostream& TransactionProcessedEvent::serialize(std::ostream& stream) const
+TerminalStream& TransactionProcessedEvent::serialize(TerminalStream& stream) const
 {
-	return stream << *m_operator << " will complete processing transaction " << m_operator->getCurrentTransaction();
+	stream << "Transaction ";
+	stream << m_operator->getCurrentTransaction();
+	stream << " will be processed by ";
+	stream << *m_operator;
+
+	return stream;
 }
 
 //======================================

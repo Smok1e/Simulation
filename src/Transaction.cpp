@@ -3,55 +3,35 @@
 #include "Config.hpp"
 #include "Transaction.hpp"
 #include "Distribution.hpp"
-#include "EscapeSequence.hpp"
 
 //======================================
 
 int GenerateTransactionDelay(Transaction transaction)
 {
-	switch (transaction)
-	{
-		case Transaction::Transaction1:
-			return ExponentialDistribution(TRANSACTION1_AVG_DELAY);
-
-		case Transaction::Transaction2:
-			return ExponentialDistribution(TRANSACTION2_AVG_DELAY);
-
-		case Transaction::Transaction3:
-			return ExponentialDistribution(TRANSACTION3_AVG_DELAY);
-
-		default:
-			throw std::runtime_error("unknown transaction type");
-	}
+	return ExponentialDistribution(TRANSACTION_AVG_DELAY.at(transaction));
 }
 
-TermColor::Color TransactionColor(Transaction transaction)
+TerminalStream& operator<<(TerminalStream& stream, Transaction transaction)
 {
 	switch (transaction)
 	{
 		case Transaction::Transaction1:
-			return TermColor::ForegroundCyan;
+			stream.pushForeground(Terminal::Color::Cyan);
+			break;
 
 		case Transaction::Transaction2:
-			return TermColor::ForegroundRed;
+			stream.pushForeground(Terminal::Color::Red);
+			break;
 
 		case Transaction::Transaction3:
-			return TermColor::ForegroundYellow;
-
-		default:
-			return TermColor::ForegroundDefault;
+			stream.pushForeground(Terminal::Color::Yellow);
+			break;
 	}
-}
 
-std::ostream& operator<<(std::ostream& stream, Transaction transaction)
-{
-	if (transaction == Transaction::None)
-		return stream << "[none]";
+	stream << static_cast<int>(transaction) + 1;
+	stream.popForeground();
 
-	return stream 
-		<< TermColor::Push(TransactionColor(transaction)) 
-		<< static_cast<int>(transaction) + 1 
-		<< TermColor::Pop();
+	return stream;
 }
 
 //======================================

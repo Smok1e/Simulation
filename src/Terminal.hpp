@@ -4,6 +4,9 @@
 #include <iostream>
 #include <string_view>
 #include <tuple>
+#include <sstream>
+#include <stack>
+#include <functional>
 
 //======================================
 
@@ -24,12 +27,11 @@ public:
 		Default = 9
 	};
 
-	Terminal(std::ostream* stream = &std::cout);
+	Terminal(bool restore = true, std::ostream* stream = &std::cout);
+	~Terminal();
 
 	size_t getWidth() const;
 	size_t getHeight() const;
-
-	void enableAltBuffer(bool enable);
 
 	// Displays changed pixels into the specified stream
 	void display(bool force_redraw = false);
@@ -70,6 +72,7 @@ private:
 	};
 
 	std::ostream* m_stream;
+	bool m_restore;
 
 	std::vector<Character> m_buffer = {};
 	std::vector<Character> m_back_buffer = {};
@@ -83,6 +86,48 @@ private:
 	void setBackgroundColor(Color color, bool force = false);
 	void setForegroundColor(Color color, bool force = false);
 	void setCursorPosition(unsigned x, unsigned y);
+
+};
+
+//======================================
+
+// TerminalStream acts as a stream buffer with
+// public ostream interface, making it possible to use specific
+// TerminalStream abilities along with standard output operations
+class TerminalStream: private std::stringbuf, public std::ostream
+{
+public:
+	TerminalStream(Terminal* terminal);
+
+	void setPosition(size_t x, size_t y);
+	std::pair<size_t, size_t> getPosition() const;
+
+	void setPadding(size_t padding);
+	size_t getPadding() const;
+
+	void pushBackground(Terminal::Color color);
+	void popBackground();
+
+	void pushForeground(Terminal::Color color);
+	void popForeground();
+
+	void newLine(size_t count = 1);
+	void clear();
+	void display();
+
+	void print(std::string_view str);
+
+private:
+	Terminal* m_terminal;
+
+	std::stack<Terminal::Color> m_background_color_stack = {};
+	std::stack<Terminal::Color> m_foreground_color_stack = {};
+
+	size_t m_x = 0;
+	size_t m_y = 0;
+	size_t m_padding = 0;
+
+	std::streambuf::int_type sync() override;
 
 };
 

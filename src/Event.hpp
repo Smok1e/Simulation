@@ -4,6 +4,7 @@
 
 #include "Transaction.hpp"
 #include "Operator.hpp"
+#include "Terminal.hpp"
 
 //======================================
 
@@ -17,12 +18,12 @@ public:
 	size_t getTime() const;
 	virtual void process(Simulation* simulation) = 0;
 
-	friend std::ostream& operator<<(std::ostream& stream, const Event& event);
-	
-protected:
-	size_t m_time;
+	friend TerminalStream& operator<<(TerminalStream& stream, const Event& event);
 
-	virtual std::ostream& serialize(std::ostream& stream) const = 0;
+protected:
+	virtual TerminalStream& serialize(TerminalStream& stream) const = 0;
+
+	size_t m_time;
 
 };
 
@@ -43,7 +44,7 @@ public:
 	void process(Simulation* simulation);
 
 private:
-	std::ostream& serialize(std::ostream& stream) const;
+	TerminalStream& serialize(TerminalStream& stream) const;
 
 	Transaction m_transaction;
 
@@ -59,7 +60,7 @@ public:
 	void process(Simulation* simulation);
 
 private:
-	std::ostream& serialize(std::ostream& stream) const;
+	TerminalStream& serialize(TerminalStream& stream) const;
 
 	Operator* m_operator;
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iostream>
+#include "Terminal.hpp"
 
 //======================================
 
@@ -15,6 +15,7 @@ enum class Transaction
 };
 
 int GenerateTransactionDelay(Transaction transaction);
-std::ostream& operator<<(std::ostream& stream, Transaction transaction);
+
+TerminalStream& operator<<(TerminalStream& stream, Transaction transaction);
 
 //======================================

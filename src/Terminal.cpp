@@ -59,24 +59,33 @@ bool Terminal::Character::operator==(const Character& other) const
 
 //======================================
 
-Terminal::Terminal(std::ostream* stream /*= &std::cout*/):
-	m_stream(stream)
+Terminal::Terminal(bool restore /*= true*/, std::ostream* stream /*= &std::cout*/):
+	m_stream(stream),
+	m_restore(restore)
 {
 	auto size = GetTerminalWindowSize();
 	m_width = size.first;
 	m_height = size.second;
 
+	if (m_restore)
+		*m_stream << esc::begin << esc::alt_buffer_enable;
+
 	setBackgroundColor(Color::Default, true);
 	setForegroundColor(Color::Default, true);
 
-	*m_stream 
-		<< esc::begin << esc::clear 
-		<< esc::begin << esc::hide_cursor;
+	*m_stream << esc::begin << esc::clear;
 
 	setCursorPosition(0, 0);
+	*m_stream << esc::begin << esc::hide_cursor;
 
 	m_buffer.resize(m_width * m_height);
 	m_back_buffer = m_buffer;
+}
+
+Terminal::~Terminal()
+{
+	if (m_restore)
+		*m_stream << esc::begin << esc::alt_buffer_disable;
 }
 
 //======================================
@@ -89,15 +98,6 @@ size_t Terminal::getWidth() const
 size_t Terminal::getHeight() const
 {
 	return m_height;
-}
-
-void Terminal::enableAltBuffer(bool enable)
-{
-	*m_stream << esc::begin << (
-		enable
-			? esc::alt_buffer_enable
-			: esc::alt_buffer_disable
-	);
 }
 
 //======================================
@@ -195,6 +195,122 @@ void Terminal::setForegroundColor(Color color, bool force /*= false*/)
 void Terminal::setCursorPosition(unsigned x, unsigned y)
 {
 	*m_stream << esc::begin << 1 + y << ';' << 1 + x << 'H';
+}
+
+//======================================
+
+TerminalStream::TerminalStream(Terminal* terminal):
+	std::ostream(this),
+	m_terminal(terminal)
+{
+	m_background_color_stack.push(Terminal::Color::Default);
+	m_foreground_color_stack.push(Terminal::Color::Default);
+}
+
+void TerminalStream::setPosition(size_t x, size_t y)
+{
+	sync();
+	m_x = x;
+	m_y = y;
+}
+
+std::pair<size_t, size_t> TerminalStream::getPosition() const
+{
+	return {m_x, m_y};
+}
+
+void TerminalStream::setPadding(size_t padding)
+{
+	sync();
+	m_x = m_padding = padding;
+}
+
+size_t TerminalStream::getPadding() const
+{
+	return m_padding;
+}
+
+void TerminalStream::pushBackground(Terminal::Color color)
+{
+	sync();
+	m_background_color_stack.push(color);
+}
+
+void TerminalStream::popBackground()
+{
+	sync();
+	m_background_color_stack.pop();
+}
+
+void TerminalStream::pushForeground(Terminal::Color color)
+{
+	sync();
+	m_foreground_color_stack.push(color);	
+}
+
+void TerminalStream::popForeground()
+{
+	sync();
+	m_foreground_color_stack.pop();
+}
+
+void TerminalStream::newLine(size_t count /*= 1*/)
+{
+	m_x = m_padding;
+	m_y += count;
+}
+
+void TerminalStream::clear()
+{
+	sync();
+	m_terminal->clear();
+	m_x = m_padding;
+	m_y = 0;
+}
+
+void TerminalStream::display()
+{
+	sync();
+	m_terminal->display();
+}
+
+void TerminalStream::print(std::string_view str) 
+{
+	auto offset = str.find('\n');
+	auto begin = str.begin();
+
+	while (offset != std::string_view::npos)
+	{
+		m_terminal->set(
+			m_x,
+			m_y,							
+			std::string_view(begin, str.begin() + offset),
+			m_background_color_stack.top(),
+			m_foreground_color_stack.top()
+		);
+
+		newLine();
+		begin = str.begin() + offset + 1;
+		offset = str.find('\n', offset + 1);
+	}
+
+	m_terminal->set(
+		m_x,
+		m_y,
+		std::string_view(begin, str.end()),
+		m_background_color_stack.top(),
+		m_foreground_color_stack.top()
+	);
+
+	m_x += str.end() - begin;
+}
+
+std::stringbuf::int_type TerminalStream::sync()
+{
+	print(view());
+	str("");
+
+	return 0;
 }
 
 //======================================

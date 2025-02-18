@@ -3,41 +3,53 @@
 #include "Config.hpp"
 #include "Distribution.hpp"
 #include "Operator.hpp"
-#include "EscapeSequence.hpp"
 
 //======================================
 
-Operator::Operator(size_t index):
+Operator::Operator(Operator::Type type, size_t index):
+	m_type(type),
 	m_index(index)
 {}
 
-Operator::~Operator()
-{}
+//======================================
 
-bool Operator::isFree() const
+bool Operator::canProcessTransaction(Transaction transaction)
 {
-	return m_current_transaction == Transaction::None;
+	return TRANSACTION_AVG_PROCESSING_TIME.at(m_type).contains(transaction) && isFree();
 }
 
-bool Operator::processTransaction(Transaction transaction)
+void Operator::processTransaction(Transaction transaction)
 {
 	if (transaction == Transaction::None)
 	{
 		m_load_time += m_processing_time;
+
+		m_processing_time = 0;
 		m_current_transaction = transaction;
-		return true;
+		return;
 	}
 
 	if (!isFree())
-		return false;
+		throw std::runtime_error("operator is busy");
 
-	auto processing_time = generateTransactionProcessingTime(transaction);
-	if (processing_time < 0)
-		return false;
+	auto processing_time = ExponentialDistribution(
+		TRANSACTION_AVG_PROCESSING_TIME.at(m_type).at(transaction)
+	);
 
 	m_processing_time = processing_time;
 	m_current_transaction = transaction;
-	return true;
+}
+
+//======================================
+
+Operator::Type Operator::getType() const
+{
+	return m_type;
+}
+
+bool Operator::isFree() const
+{
+	return m_current_transaction == Transaction::None;
 }
 
 int Operator::getProcessingTime() const
@@ -55,86 +67,44 @@ Transaction Operator::getCurrentTransaction() const
 	return m_current_transaction;
 }
 
-std::ostream& Operator::displayDetails(std::ostream& stream) const
+//======================================
+
+TerminalStream& operator<<(TerminalStream& stream, const Operator& op)
 {
-	stream << *this << ": ";
-
-	if (isFree())
-		stream 
-			<< TermColor::Push(TermColor::ForegroundGreen) 
-			<< "Free" 
-			<< TermColor::Pop();
-
-	else
+	switch (op.m_type)
 	{
-		stream
-			<< TermColor::Push(TermColor::ForegroundBlue)
-			<< "Processing " << m_current_transaction << "..."
-			<< TermColor::Pop();
+		case Operator::Type::Operator1:
+			stream.pushForeground(Terminal::Color::Cyan);
+			break;
+
+		case Operator::Type::Operator2:
+			stream.pushForeground(Terminal::Color::Red);
+			break;
 	}
+
+	stream << "Operator" << static_cast<int>(op.m_type);
+	stream.popForeground();
+
+	stream << " #" << std::setw(2) << std::left << op.m_index + 1;
 
 	return stream;
 }
 
-std::ostream& operator<<(std::ostream& stream, const Operator& op)
+void Operator::printStatus(TerminalStream& stream)
 {
-	return stream 
-		<< TermColor::Push(op.getColor()) 
-		<< op.getName() << " [" << std::setw(2) << op.m_index << ']'
-		<< TermColor::Pop(); 
-}
-
-//======================================
-
-const char* Operator1::getName() const
-{
-	return "Operator1";
-}
-
-TermColor::Color Operator1::getColor() const
-{
-	return TermColor::ForegroundCyan;
-}
-
-int Operator1::generateTransactionProcessingTime(Transaction transaction) const
-{
-	switch (transaction)
+	if (m_current_transaction == Transaction::None)
 	{
-		case Transaction::Transaction1:
-			return ExponentialDistribution(TRANSACTION1_AVG_PROCESSING_TIME);
-
-		case Transaction::Transaction3:
-			return ExponentialDistribution(TRANSACTION3_AVG_PROCESSING_TIME_OP1);
-
-		default:
-			return -1;
+		stream.pushForeground(Terminal::Color::Green);
+		stream << "Free";
+		stream.popForeground();
 	}
-}
 
-//======================================
-
-const char* Operator2::getName() const
-{
-	return "Operator2";
-}
-
-TermColor::Color Operator2::getColor() const
-{
-	return TermColor::ForegroundRed;
-}
-
-int Operator2::generateTransactionProcessingTime(Transaction transaction) const
-{
-	switch (transaction)
+	else
 	{
-		case Transaction::Transaction2:
-			return ExponentialDistribution(TRANSACTION2_AVG_PROCESSING_TIME);
-
-		case Transaction::Transaction3:
-			return ExponentialDistribution(TRANSACTION3_AVG_PROCESSING_TIME_OP2);
-
-		default:
-			return -1;
+		stream.pushForeground(Terminal::Color::Blue);
+		stream << "Processing transaction "; 
+		stream << m_current_transaction;
+		stream.popForeground();
 	}
 }
 
