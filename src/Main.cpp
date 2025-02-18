@@ -10,7 +10,6 @@
 #include "ArgParser.hpp"
 #include "SignalHandler.hpp"
 #include "Terminal.hpp"
-#include "Formatter.hpp"
 
 using namespace std::chrono_literals;
 
