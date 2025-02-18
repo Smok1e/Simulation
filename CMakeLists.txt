@@ -22,12 +22,6 @@ add_executable(
 	"src/Main.cpp"
 )
 
-add_executable(
-	TerminalTest
-	"src/Terminal.cpp"
-	"src/TerminalTest.cpp"
-)
-
 option(
 	STL_DISTRIBUTION 
 	"Use C++ <random> api instead of C rand() function"
